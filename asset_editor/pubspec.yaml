@@ -1,0 +1,26 @@
+name: asset_editor
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.5.4
+
+dependencies:
+  csv: ^6.0.0
+  flutter:
+    sdk: flutter
+  flutter_material_color_picker: ^1.2.0
+  path_provider: ^2.1.5
+  provider: ^6.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/csv/
