@@ -1,0 +1,462 @@
+## Openstreet API for flutter
+
+### Introduxtion
+
+Libraries required:
+	flutter_map
+	latlong
+
+Note: The official websiet or server is written on Ruby on Rails
+
+### Dependence syntax
+	
+
+### Flutter Map project structure
+
+-- src
+	-- geo
+		-> crs.dart
+		-> latlng_bounds.dart
+	-- gestures
+		-> interactive_flag.dart
+		-> latlng_tween.dart
+		-> map_events.dart
+		-> map_interactive_viewer.dart
+		-> multi_finger_gesture.dart
+		-> positioned_tap_detector_2.dart
+	-- layer
+		-- attribution_layer
+			-- rich
+				-> animation.dart
+				-> source.dart
+				-> widget.dart
+			-> simple.dart
+		-- circle_layer
+			-> circle_layer.dart
+			-> circle_marker.dart
+			-> painter.dart
+		-- marker_layer
+			-> marker.dart
+			-> marker_layer.dart
+		-- overlay_image_layer
+			-> overlay_image.dart
+			-> overlay_image_layer.dart
+		-- polygon_layer
+			-> label.dart
+			-> painter.dart
+			-> polygon.dart
+			-> polygon_layer.dart
+			-> projected_polygon.dart
+		-- polyline_layer
+			-> painter.dart
+			-> polyline.dart
+			-> polyline_layer.dart
+			-> projected_polyline.dart
+		-- scalabar
+			-- painter
+				-> base.dart
+				-> simple.dart
+			-> scalabar.dart
+		-- shared
+			-- layer_interactivity
+				-> internal_hit_detectable.dart
+				-> layer_hit_notifier.dart
+				-> layer_hit_result.dart
+			-- layer_projection_simplification
+				-> state.dart
+				-> widget.dart
+			-- line_patterns
+				-> pixel_hiker.dart
+				-> stroke_pattern.dart
+				-> visible_segment.dart
+			-> mobile_layer_transfporm.dart
+			-> translucent_pointer.dart
+		-- tile_layer
+			-- tile_bounds
+				-> tile_bounds.dart
+				-> tile_bounds_at_zoom.dart
+			-- tile_provider
+				-- file_provider
+					-> tile_provider_io.dart
+					-> tile_provider_stub.dart
+				-> asset_tile_provider.dart
+				-> base_tile_provider.dart
+				-> network_image_provider.dart
+				-> network_tile_provider.dart
+			-> retina_mode.dart
+			-> tile.dart
+			-> tile_builder.dart
+			-> tile_coordinates.dart
+			-> tile_display.dart
+			-> tile_error_evict_callback.sart
+			-> tile_image.dart
+			-> tile_range.dart
+			-> tile_renderer.dart
+			-> tile_scale_calculator.dart
+			-> tile_update_event.dart
+			-> tile_update_transformer.dart
+			-> wms_tile_layer_options.dart
+	-- map
+		-- camera
+			-> camera.dart
+			-> camera_constraint.dart
+			-> camera_fit.dart
+		-- controller
+			-> map_controller.dart
+			-> map_controller_impl.dart
+		-- options
+			-> cursor_keyboard_rotation.dart
+			-> interaction.dart
+			-> options.dart
+		-> inherited_model.dart
+		-> widget.dart
+	-- misc
+		-> bounds.dart
+		-> center_zoom.dart
+		-> extensions.dart
+		-> move_and_rotate.dart
+		-> offsets.dart
+		-> point_in_polygon.dart
+		-> position.dart
+		-> simplify.dart
+	-> flutter_map.dart
+
+### flutter_map.dart
+	-> It includes every files listed above
+
+### map/
+	1) widget.dart
+		-> It provides FlutterMap class, a stateful widget
+		-> has variables
+			- key
+			- mapController : MapController
+			- options : MapOptions
+			- children : List<Widget>
+
+	2) inherited_model ( MapInheritedModel class )
+		-> used to store map data context, if true preserves even if app goes out of focus
+		-> variables:
+			a) camera : MapCamera
+			b) controller : MapController
+			c) options : MapOptions
+		
+### map/camera/
+	1) camera.dart ( MapCamera class )
+		-> variables:
+			a) crs : Crs ( coordinate reference system )
+			b) minZoom
+			c) maxZoom
+			d) center : Latlang
+			e) zoom
+			f) rotation
+			g) nonRotatedSize : Point<double>
+			h) _cameraSize : Point<double>
+			i) _pixelBounds : Bounds<double>
+			j) _bounds : latlngBounds
+			k) _pixelOrigin : Point<double>
+			l) visibleBounds : LatlngBounds ( get )
+			m) size : Point<double> ( get )
+			n) pixelOrigin : Point<double> ( get )
+		-> functions
+			a) withRotatedSize ( nonRotatedSize : Point<double> )
+				-> returns new MapCamera object rotated
+			b) withRotation ( rotation : double )
+				-> returns new MapCamera with rotation
+			c) withOptions ( options : MapOptions )
+				-> return new MapCamera with MapOptions
+			d) withPositions ( center : Latlng?, zoom : double? )
+				-> return new MapCamera with given center and zoom
+			e) calculateRotatedSize ( rotation : double , nonRotatedSize : Point<double> )
+				-> returns Point<double>
+			f) rotationRad ( get )
+			g) project ( latlng : Latlng, zoom : double? )
+				-> return Point<double>
+			h) unProject ( point : Point)
+				-> return Latlng
+			i) layerPointToLatlng ( point :  Point<double> )
+			j) getZoomScale ( toZoom, fromZoom)
+			k) getScaleZoom ( scale )
+			l) getPixelWorldBounds ( zoom : double? ) 
+				-> returns Bounds?
+			m) getOffsetOrigin ( Latlng pos ) : Offset
+			n) getNewPixelOrigin ( center : Latlng , zoom : double ) : Point<int>
+			o) pixelBounds return Bounds<double> ( get )
+			p) pixelBoundsAtZoom ( zoom ) : Bounds<double>
+			q) latlngToScreenPoint
+			r) pointToLatlng
+			s) rotatePoint
+			t) clampZoom
+			u) offsetToCrs
+			v) focusedZoomCenter
+			w) hasCode
+			x) operatoe ==
+
+	2) camera_constraints.dart
+		-> defines classes to constraint the movement, zooming, rotation , of the map
+
+
+	3) camera_fir.dart
+		-> used internally to fit camera to bounds
+### map/controller/
+	1) map_controller.dart ( MapController )
+		-> helps control flutter map interactively
+		-> it is an abstract class inplemented by MapControllerImpl
+		-> variables:
+			a) MapControllerImpl
+			b) mapEventStream ( get )
+		-> functions:
+			a) move ( center, zoom, offset, id ) : bool
+			b) rotate ( degree, id ) : bool
+				-> note: return true if successful
+			c) rotateAroundPoint ( degree, point, offset, id )
+			d) moveAndRotate ( center, zoom, degree, id ) : MoveAndRotateResult
+			e) fitCamera ( cameraFir : CameraFit )
+			f) camera ( get )
+
+	2) map_controller_impl.dart
+		-> basically implements mapCotroller abstract class and provides functionality
+
+### map/options/
+	1) cursor_keyboard.dart 
+		-> describes and implements the cursor and keyboard controls for the map interaction
+		-> variables:
+			a) CursorRotationBehaviour
+				-> setNorth
+				-> offset
+			b) CursorKeyboardRotationOptions
+				-> IsKeyCursorRotationTrigger
+				-> cursorRootationBehaviour
+				-> setNorthOnClick : bool
+				-> defaultTriggers 
+					- control, controlLeft, controlRight
+			
+	2) interaction.dart ( InteractiveOptions )
+		-> variables:
+			a) flags
+			b) debugMultiFingerGestureWinner
+			c) enableMultiFingerGestureRace
+			d) rotationThreshold
+			e) rotationWinGestures
+			f) pinchZoomThreshold
+			g) pinchZoomWingestures
+			h) pinchMoveThreshold
+			i) pinchMoveWinGestures
+			j) scrollWheelVelocity
+			k) cursorKeyboardRotationoptions
+
+	3) options.dart
+		-> variables
+				a) crs,
+        b) initialCenter,
+        c) initialZoom,
+        d) initialRotation,
+        e) initialCameraFit,
+        f) minZoom,
+        g) maxZoom,
+        h) backgroundColor,
+        i) onTap,
+        j) onSecondaryTap,
+        k) onLongPress,
+        l) onPointerDown,
+        m) onPointerUp,
+        n) onPointerCancel,
+        o) onPointerHover,
+        p) onPositionChanged,
+        q) onMapEvent,
+        r) cameraConstraint,
+        s) onMapReady,
+        t) keepAlive,
+        u) interactionOptions,
+        v) backgroundColor,
+        w) applyPointerTranslucencyToLayers,
+
+### geo/
+	1) crs.dart
+		-> an abstract class
+		-> coordinate reference system
+		-> variables:
+			a) code
+			b) infinite
+			c) wraplng : (double, double)
+				-> wraps the longitude
+			d) wraplat
+				-> wraps the latitude
+			e) projection ( get )
+		-> functions:
+			a) transform ( x, y, scale ) : (double, double)
+				-> planar to scaled map
+			b) untransform ( x, y, scale ) : (double, double)
+				-> scale map to planar
+			c) latLngToXY ( latlng, scale )
+			d) latLngToPoint ( latlng, zoom ) : Point<double>
+			e) pointToLatLng ( point, zoom )
+			f) scale( zoom )
+			g) zoom ( scale )
+				-> log scale
+			h) getProjectionBounds ( zoom )
+			i) replicatesWorldLongitude ( get ) : bool
+
+	2) latlng_bounds.dart ( LatLngBounds )
+		-> used internally
+
+### gestures/
+	1) interactive_flag.dart
+		-> constants
+			a) drag, flingAnimation, pinchMove, pinchZoom, doubleTapZoom, doubleTapDragZoom, scrollWheelZoom, rotate, all
+		-> abstract class
+		-> boolean funcs :
+			a) hasFlag( leftFlags, rightFlags )
+			b) hasMultiFinger ( flags )
+			c) hasFling....
+			....
+
+	2) map_events.dart
+		-> used internally to define map_events through interaction
+		-> classes implemented:
+			a) MapEventTap
+			b) MapEventSecondaryTap
+			c) MapEventLongPress
+			d) MapEventMove
+			e) MapEventMoveStart
+			f) MapEventMoveEnd
+			g) MapEventFlingAnimation
+			h) MapEventFlingAnimationNotStarted
+			i) MapEventFlingAnimationStart
+			j) MapEventFlingAnimationEnd
+			k) MapEventDoubleTapZoom
+			l) MapEventScrollWheelZoom
+			m) MapEventDoubleTapZoomStart
+			n) MapEventDoubleTapZoomEnd
+			o) MapEventRotate
+			p) MapEventRotateStart
+			q) MapEventRotateEnd
+			r) MapEventNonRotatedSizeChange
+
+	3) map_interactive_viewer.dart
+		-> acts as a bridge betweenn map and interaction 
+```
+MapInteractiveViewer(
+  mapController: mapController,
+  interactiveFlags: InteractiveFlag.all,
+  onInteraction: () {
+    print("Map is being interacted with!");
+  },
+  onInteractionEnd: () {
+    print("Map interaction ended.");
+  },
+  child: TileLayer(
+    urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    subdomains: ['a', 'b', 'c'],
+  ),
+);
+
+```
+			
+	4) multi_finger_gesture.dart
+		-> handles rotate and zoom mixed with pinching
+
+	5) positioned_tap_gesture.dart
+		-> internally handles tap gestures in context of map
+```
+PositionedTapDetector2(
+  onTap: (position) {
+    print('Single tap at global position: ${position.global}');
+    print('Single tap at local position: ${position.local}');
+  },
+  onDoubleTap: (position) {
+    print('Double tap at position: ${position.local}');
+  },
+  onLongPress: (position) {
+    print('Long press at position: ${position.local}');
+  },
+  child: Container(
+    color: Colors.blue,
+    width: 300,
+    height: 300,
+    child: Center(child: Text('Tap me!')),
+  ),
+);
+
+```
+
+### layer/
+	1) attribution_layer
+		a) simple.dart
+			-> a widget to display attribution 
+			-> has Text source, onTap, alignment
+		b) animation.dart
+			-> for popup animations
+		c) source.dart
+			-> base class for attribution rendering
+		d) widget.dart
+			-> can be used in tile layer with attributionBuilder property
+
+	2) circle_layer
+		a) circle_layer.dart
+			-> list of circle_markers
+		b) circle_marker.dart
+			-> has LatLng point, radius, color, borderStrokeWidth, borderColor, bool useRadiusInMeter, R? hitValue
+		c) painter.dart
+			-> provides way to paint the circle marker
+
+	3) marker_layer
+		a) marker.dart
+			-> has Widget child, width, height, alignment, bool rotate
+		b) marker_layer.dart
+			-> has list of marker widget
+			
+	4) overlay_image_layer
+		a) overlay_image.dart
+			-> has imageProvider, opacity, bool gaplessPlayback, FilterQuality ( high, medium , ... ), LatLngBounds
+
+		b) overlay_image_layer.dart
+			-> list of overlay_images
+
+	4) polygon_layer
+		a) label.dart
+			-> provides functions to compute where to put labels position with respect to the polygon in centroid or polylabel way
+		b) polygon.dart
+			-> PolygonLabelPlacement
+				-> centroid, polylabel
+			-> Polygon<R> class has
+				-> list of LatLng points, list of list of LatLng holePoints, color, borderStrokeWidth, borderColor, bool disableHolesBorder, StrokePattern, bool? isFilled, StrokeCap, String label, TextStyle, labelPlacement, bool rotateLabel, R? hitvalue, labelPosition, boundingBox, textPainter, 
+
+		c) projected_polygon.dart
+			-> list of Polygon<R>, list of points, list of holePoints
+		
+		d) painter.dart
+			-> list of ProjectedPolygons, list of list of triangles computed afterwards, bounds, polygonlabels, bool drawlabelslast, bool debugAltRenderer
+
+		e) polygon_layer.dart
+			-> list of Polygon<R> , bool useAltRendering, bool debugAltRendering, bool polygonCulling, bool polygonLabels, bool drawLabelsLast, bitNotifier
+
+	5) polyline_layer
+		a) polyline.dart
+			-> list of LatLng points, strokeWidth, StrokePattern, color, borderStrokeWidth, borderColor, lis of colors - gradientColors, list of double colorStop, strokecap, strokejoin, bool useStrokeWidthMeter, R? hitvalue
+
+		b) projected_polygon.dart
+			-> list of polyline, list of points
+
+		c) painter.dart
+			-> list of projected polyline, minimumHitBox
+
+		d) polyline_layer.dart
+			-> list of polyline, double cullingMargin, hitNotifier, minimumHitBox
+
+	6) scalebar
+		a) scalebar.dart
+			-> has alignment, textstyle, lineColor, strokewidth, lineHeight, padding, ScalebarLength length, 
+
+	7) shared
+		a) line_pattrns
+			i) stroke_pattern.dart
+				-> for StrokePattern class
+			ii) popixel_hiker.dart
+				-> dotted pixels
+			iii) visible_segment.dart
+				-> clip segments as visible within the class
+
+		note: all other classes are use internally
+
+	8) tile_layer
+		-> all classes inside are used internally

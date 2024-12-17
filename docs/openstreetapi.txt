@@ -1,0 +1,67 @@
+1)	 https://master.apis.dev.openstreetmap.org/api/versions.json
+
+2) https://master.apis.dev.openstreetmap.org/api/capabilities.json
+
+  "api": {
+    "version": {
+      "minimum": "0.6",
+      "maximum": "0.6"
+    },
+    "area": {
+      "maximum": 0.25
+    },
+    "note_area": {
+      "maximum": 25
+    },
+    "tracepoints": {
+      "per_page": 5000
+    },
+    "waynodes": {
+      "maximum": 2000
+    },
+    "relationmembers": {
+      "maximum": 32000
+    },
+    "changesets": {
+      "maximum_elements": 10000,
+      "default_query_limit": 100,
+      "maximum_query_limit": 100
+    },
+    "notes": {
+      "default_query_limit": 100,
+      "maximum_query_limit": 10000
+    },
+    "timeout": {
+      "seconds": 300
+    },
+    "status": {
+      "database": "online",
+      "api": "online",
+      "gpx": "online"
+    }
+  },
+  "policy": {
+    "imagery": {
+      "blacklist": []
+    }
+  }
+
+3)  https://master.apis.dev.openstreetmap.org/api/0.6/map?bbox=left(longitude),bottom(latitude),right(longitude),top(latitude)
+	e.g. https://master.apis.dev.openstreetmap.org/api/0.6/map?bbox=-73.9819,40.7644,-73.9580,40.8005
+
+
+4) https://master.apis.dev.openstreetmap.org/api/0.6/permissions.json
+
+----------------------------------------------
+
+This is how the API computes the bounding box associated with a changeset:
+
+Nodes: Any change to a node, including deletion, adds the node's old and new location to the bbox.
+Ways: Any change to a way, including deletion, adds all of the way's nodes to the bbox.
+Relations:
+adding or removing nodes or ways from a relation causes them to be added to the changeset bounding box.
+adding a relation as a member or changing tag values causes all node and way members to be added to the bounding box.
+this is similar to how the map call does things and is reasonable on the assumption that adding or removing members doesn't materially change the rest of the relation.
+As an optimisation the server will create a buffer slightly larger than the objects to avoid having to update the bounding box too often. Thus a changeset may have a different bounding box than its reversion, and the distance between bounding box and the next node may not be constant for all four directions.
+
+--------------------------------------------------------------

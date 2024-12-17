@@ -1,0 +1,33 @@
+name: map_test_1
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.5.4
+
+dependencies:
+  csv: ^6.0.0
+  flutter:
+    sdk: flutter
+  flutter_image_compress: ^2.3.0
+  flutter_map: ^7.0.2
+  flutter_map_tile_caching: ^9.1.4
+  flutter_material_color_picker: ^1.2.0
+  geolocator: ^13.0.2
+  image_picker: ^1.1.2
+  latlong2: ^0.9.1
+  path_provider: ^2.1.5
+  pointycastle: ^3.9.1
+  provider: ^6.1.2
+  wheel_slider: ^1.2.2
+  yaml: ^3.1.2
+  yaml_writer: ^2.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
