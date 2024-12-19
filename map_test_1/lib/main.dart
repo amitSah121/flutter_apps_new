@@ -3,11 +3,14 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:map_test_1/constants/constants.dart';
 import 'package:map_test_1/explore/explore_home.dart';
 import 'package:map_test_1/helpers_funcs/file_funcs.dart';
+import 'package:map_test_1/helpers_funcs/file_funcs_user_dir.dart';
 import 'package:map_test_1/home.dart';
 import 'package:map_test_1/journey_notes/journey_notes_home.dart';
 import 'package:map_test_1/notifications/notification_home.dart';
+import 'package:map_test_1/pageEditors/media_reader.dart';
 import 'package:map_test_1/pageEditors/page_editor.dart';
 import 'package:map_test_1/pageEditors/media_editor.dart';
+import 'package:map_test_1/pageEditors/page_reader.dart';
 import 'package:map_test_1/profile/profile_home.dart';
 import 'package:map_test_1/provider/provider.dart';
 import 'package:map_test_1/search/searchHome.dart';
@@ -41,11 +44,12 @@ class MainApp extends StatefulWidget {
 
 }
 
-class _MainAppState extends State<MainApp>{
+class _MainAppState extends State<MainApp> with WidgetsBindingObserver{
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     Future.microtask(() async{
       final myModel = Provider.of<CustomProvider>(context, listen: false);
       defaultAppPath = await localPath;
@@ -63,8 +67,17 @@ class _MainAppState extends State<MainApp>{
       await getDir("pageNode");
       await getDir("mediaNode");
 
+      await getUserDirectory();
+
       await listFilesDirs(dir: "",pattern: "*/*");
     });
+
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
@@ -88,6 +101,8 @@ class _MainAppState extends State<MainApp>{
         "/notifications": (context) => const NotificationHome(),
         "/pageEditor": (context) => const PageEditor(),
         "/mediaEditor": (context) => const MediaEditor(),
+        "/pageReader": (context) => const PageReader(),
+        "/mediaReader": (context) => const MediaReader(),
       },
       debugShowCheckedModeBanner: false,
     );

@@ -12,11 +12,19 @@ final drawerConstHome = {
 };
 const bottomNavBarHome = {
   "Explore": Icons.explore, 
-  "Tracer": Icons.track_changes,
+  "Journey/Tracing": [Icons.new_label, Icons.track_changes],
   "Profile": Icons.person
 };
 const floatingIconHome = Icons.location_on;
 const List<double> noteDisplaySize = [240,30];
+
+// Tracer
+const bottomNavBarTracerHome = {
+  "stopTracing/tracingDone": [Icons.stop,Icons.done], 
+  "media": Icons.camera,
+  "Home": Icons.home
+};
+const floatingIconTracerHome = Icons.add;
 
 // Journey and Notes
 

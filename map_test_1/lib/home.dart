@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:map_test_1/constants/constants.dart';
 import 'package:map_test_1/helper_classes/helperClasses.dart';
@@ -36,7 +33,7 @@ class _HomeState extends State<Home> {
     final args = ModalRoute.of(context)?.settings.arguments;
     if(args != null){
       searchResult = args as Journey;
-      result = searchResult!.name!;
+      result = searchResult!.metadata.split(";")[0].split("=")[1];
       map.pathNodes = searchResult!.pathNodes;
       map.pageNodes = searchResult!.pageNodes;
       map.mediaNodes = searchResult!.mediaNodes;
@@ -78,7 +75,7 @@ class _HomeState extends State<Home> {
                   title: const Text("Pages"),
                   leading: const Icon(Icons.book),
                   onTap: (){
-                    Navigator.pushNamed(context,"/pageEditor",arguments: map.pageNodes![index]);
+                    Navigator.pushNamed(context,"/pageReader",arguments: map.pageNodes![index]);
                   },
                 )
                 :
@@ -86,7 +83,7 @@ class _HomeState extends State<Home> {
                   title: const Text("Media"),
                   leading: const Icon(Icons.photo),
                   onTap: (){
-                    Navigator.pushNamed(context,"/mediaEditor",arguments: map.mediaNodes![index - map.pageNodes!.length]);
+                    Navigator.pushNamed(context,"/mediaReader",arguments: map.mediaNodes![index - map.pageNodes!.length]);
                   },
                 )
                 ; 
@@ -129,14 +126,6 @@ class _HomeState extends State<Home> {
   }
 
   CustomPaint drawAltitude(double width, double height) {
-    // double minAltitude = searchResult!.pathNodes
-    // .map((node) => node.altitude)
-    // .reduce((value, element) => value < element ? value : element);
-    
-    // double maxAltitude = searchResult!.pathNodes
-    // .map((node) => node.altitude)
-    // .reduce((value, element) => value > element ? value : element);
-
     List<double> xes = generateEvenlySpaced(0, width, searchResult!.pathNodes.length);
     int i=-1;
     List<Offset> offsets = searchResult!.pathNodes.map((p){
@@ -165,74 +154,26 @@ class _HomeState extends State<Home> {
             Future.microtask(() async {
               try {
                 // await deleteFile("pageNode/2024-12-17 16-25-45.090136");
-                // await deleteFile("pageNode/2024-12-17 16-27-44.450202");
+                // await deleteFile("pageNode/2024-12-18 19-42-59.584421");
+                // await deleteFile("mediaNode/2024-12-18 19-42-59.584421");
                 // await deleteFile("pageNode/[fileName, 2024-12-17 16-25-45.090136]");
-                // await listFilesDirs(dir: "", pattern: "*/*");
+                // await listFilesDirs(dir: "", pattern: "*/*/*");
+                // await listFilesDirs(dir: "pageNode",pattern: "*/*");
+                // await listFilesDirs(dir: "mediaNode",pattern: "*/*");
+                // print(await readFile("pageNode/2024-12-18 20-37-05.015187"));
+                // await deleteFile("mediaNode/2024-12-18 20-37-05.015187");
+                await listFilesDirs(dir:"journey", pattern: "*/*/*");
               } catch (e) {
                 print(e);
               }
             });
 
-            Navigator.pushNamed(context, "/notifications");
+            // Navigator.pushNamed(context, "/notifications");
           },
           icon: const Icon(Icons.notifications)),
         IconButton(
           onPressed: (){
-            showDialog(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  alignment: Alignment.topRight,
-                  title: const Text("Create"),
-                  content: SizedBox(
-                    width: 40,
-                    height: 128,
-                    child: ListView(
-                      children: [
-                        SizedBox(
-                          width: 40,
-                          child: ListTile(
-                            title: const Text("Page"),
-                            leading: const Icon(Icons.book),
-                            onTap: (){
-                              var time = DateTime.now().toString().replaceAll(":", "-");
-                              PageNode pageNode = PageNode(
-                                rows: RowMap(
-                                  rows: {
-                                  },
-                                ),
-                                pathNumber_1: -1, // means not connected to journey
-                                pathNumber_2: -1, // means not connected to journey
-                                t: 0, 
-                                pageNumber: -1, // means not connected to journey
-                                metadata: "fileName=$time;title=Untitled;backgroundColor=${Colors.white.value.toString()}",
-                              );
-                              Future.microtask(()async{
-                                await getFile("pageNode/$time");
-                                await writeFile("pageNode/$time", jsonEncode(pageNode.toJson()));
-                                final myModel = Provider.of<CustomProvider>(context, listen: false);
-                                myModel.pageNodes.add(pageNode);
-                                Navigator.pushNamed(context, "/pageEditor",arguments: pageNode);
-                              });
-                            },
-                          ),
-                        ),
-                        SizedBox(
-                          width: 40,
-                          child: ListTile(
-                            title: const Text("Media"),
-                            leading: const Icon(Icons.photo),
-                            onTap: (){
-                              
-                            },
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
-                );
-              }
-            );
+            createPageMediaNode(context);
           }, 
           icon: const Icon(Icons.add)
         )  
@@ -319,10 +260,18 @@ class _HomeState extends State<Home> {
 
   BottomNavigationBar bottomBarDraw() {
     var keys = bottomNavBarHome.keys.toList();
+    final myModel = Provider.of<CustomProvider>(context, listen: false);
+    final which2 = myModel.currentJourney == null ? 0 : 1;
     return BottomNavigationBar(
       items: keys.map((ele) {
-        return BottomNavigationBarItem(
-          icon: Icon(bottomNavBarHome[ele]),
+        return bottomNavBarHome[ele].runtimeType == ([Icons.all_out]).runtimeType ?
+        BottomNavigationBarItem(
+          icon: Icon((bottomNavBarHome[ele]! as List<IconData>)[which2]),
+          label: ele.split("/")[which2],
+        )
+        :
+        BottomNavigationBarItem(
+          icon: Icon(bottomNavBarHome[ele] as IconData),
           label: ele,
         );
       }).toList(),
@@ -330,21 +279,56 @@ class _HomeState extends State<Home> {
       selectedItemColor: Colors.black,
       unselectedItemColor: Colors.black,
       onTap: (index) {
-        bottomBarElementFuncs(index);
+        bottomBarElementFuncs(index,which2);
       },
     );
   }
 
-  void bottomBarElementFuncs(index) {
-    // var keys = bottomNavBarHome.keys.toList();
+  void bottomBarElementFuncs(index, which2) {
     switch (index) {
       case 0:
         Navigator.pushNamed(context, "/explore");
         break;
       case 1:
-        Navigator.pushNamed(context, "/tracer");
+
+        if(which2 == 1){
+          Navigator.pushNamed(context, "/tracer");
+        }else{
+          showDialog(
+            context: context, 
+            builder: (context){
+              final controller = TextEditingController();
+              return AlertDialog(
+                alignment: Alignment.center,
+                title: const Text("Title"),
+                content: TextField(
+                  controller: controller,
+                  onSubmitted: (val){
+                    Navigator.pop(context);
+                    var title = "untitled";
+                    if(val.isNotEmpty){
+                      title = val;
+                    }
+                    
+                    final myModel = Provider.of<CustomProvider>(context, listen: false);
+                    var time = DateTime.now().toString().replaceAll(":", "-");
+                    Journey temp = Journey(time);
+                    myModel.currentJourney = temp;
+                    temp.metadata = "title=$title;autopathDone=false";
+                    Future.microtask(()async{
+                      await getDir("journey/$time");
+                      await getFile("jouney/$time/pathNode.json");
+                      await getFile("jouney/$time/pageNode.json");
+                      await getFile("jouney/$time/mediaNode.json");
+                      Navigator.pushNamed(context, "/tracer");
+                    });
+                  }
+                )
+              );
+            });
+        }
         break;
-      case 2:
+      case 3:
         Navigator.pushNamed(context, "/profile");
         break;
     }

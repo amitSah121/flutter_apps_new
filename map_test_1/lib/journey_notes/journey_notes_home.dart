@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:map_test_1/constants/constants.dart';
 import 'package:map_test_1/helper_classes/model.dart';
 import 'package:map_test_1/helpers_funcs/file_funcs.dart';
+import 'package:map_test_1/helpers_funcs/misselenious.dart';
 import 'package:map_test_1/provider/provider.dart';
 import 'package:provider/provider.dart';
 
@@ -41,7 +42,7 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
             children: [
               journeyWidget(context),
               pageNodes(context),
-              const Icon(Icons.directions_bike),
+              mediaNodes(context),
             ],
           ),
         ),
@@ -51,17 +52,16 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
   Widget pageNodes(context){
     final myModel = Provider.of<CustomProvider>(context, listen: false);
     var pageNodes =  myModel.pageNodes;
-    var mediaNodes = myModel.mediaNodes;
-    var totalItems = pageNodes.length+mediaNodes.length;
+    var totalItems = pageNodes.length;
     return ListView.builder(
       itemCount: totalItems,
       itemBuilder: (context,index){
-        return index < pageNodes.length ? 
-        ListTile(
-          leading: Text("${(index+1).toString()}.",style: const TextStyle(fontSize: 16),),
+        var path = 'pageNode/${pageNodes[index].metadata.split(";")[0].split("=")[1]}';
+        return ListTile(
+          leading: Text("${(index+1).toString()}.",style: const TextStyle(fontSize: 16),), // number
           title: Text(pageNodes[index].metadata.split(";")[1].split("=")[1]), // title
           onTap: (){
-            Navigator.pushNamed(context, "/pageEditor",arguments: pageNodes[index]);
+            Navigator.pushNamed(context, "/pageEditor",arguments: {"node":pageNodes[index],"path":path});
           },
           onLongPress: (){
             showBottomSheet(
@@ -140,16 +140,102 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
             );
           },
           
-        )
-        :
-        ListTile(
-          leading: Text("${(index-pageNodes.length+1).toString()}.",style: const TextStyle(fontSize: 16),),
-          title: Text(mediaNodes[index-pageNodes.length].metadata.split(";")[1].split("=")[1]),
+        );
+      });
+  }
+
+  Widget mediaNodes(context){
+    final myModel = Provider.of<CustomProvider>(context, listen: false);
+    var mediaNodes = myModel.mediaNodes;
+    var totalItems = mediaNodes.length;
+    return ListView.builder(
+      itemCount: totalItems,
+      itemBuilder: (context,index){
+        var path = 'mediaNode/${mediaNodes[index]!.metadata.split(";")[0].split("=")[1]}';
+        return ListTile(
+          leading: Text("${(index+1).toString()}.",style: const TextStyle(fontSize: 16),),
+          title: Text(mediaNodes[index].metadata.split(";")[1].split("=")[1]),
           onTap: (){
-            Navigator.pushNamed(context, "/mediaEditor",arguments: mediaNodes[index-pageNodes.length]);
+            Navigator.pushNamed(context, "/mediaEditor",arguments: {"node":mediaNodes[index],"path":path});
           },
-          
-        );;
+          onLongPress: (){
+            showBottomSheet(
+              context: context, 
+              builder: (context){
+                return Wrap(children: <Widget>[
+                  ListTile(
+                    leading: const Icon(Icons.edit),
+                    title: const Text(' Rename'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showDialog(
+                        context: context, 
+                        builder: (context){
+                          var controller = TextEditingController();
+                          controller.text = mediaNodes[index].metadata.split(";")[1].split("=")[1];
+                          return AlertDialog(
+                            alignment: Alignment.center,
+                            title: const Text("Rename"),
+                            content: TextField(
+                              controller: controller,
+                              onChanged: (value) {
+                                var p1 = mediaNodes[index].metadata.split(";");
+                                p1[1] = "title=$value";
+                                mediaNodes[index].metadata = p1.join(";");
+                                // print(mediaNodes[])
+                              },
+                              onSubmitted: (value){
+                                setState(() {
+                                  var t = mediaNodes[index].toJson();
+                                  writeFile("mediaNode/${mediaNodes[index].metadata.split(";")[0].split("=")[1]}", jsonEncode(t));
+                                  Navigator.pop(context);
+                                });
+                              },
+                            ),
+                          );
+                        }
+                      );
+                    }
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.delete),
+                    title: const Text(' Delete'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return SimpleDialog(
+                            title: const Text('Delete node?'),
+                            children: [
+                              SimpleDialogOption(
+                                onPressed: (){
+                                  Future.microtask(()async{
+                                    await deleteFile("mediaNode/${mediaNodes[index].metadata.split(";")[0].split("=")[1]}");
+                                    mediaNodes.removeAt(index);
+                                    setState(() {
+                                      Navigator.pop(context);
+                                    });
+                                  });
+                                },
+                                child: const Text('Ok'),
+                              ),
+                              SimpleDialogOption(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Cancel'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+
+                    }
+                  ),
+                ]);
+              }
+            );
+          },
+        );
       });
   }
 
@@ -159,7 +245,7 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
             tabs: [
               Tab(icon: Icon(Icons.book),text: "Journey"),
               Tab(icon: Icon(Icons.pages_sharp), text: "Pages",),
-              Tab(icon: Icon(Icons.photo), text: "Gallary",)
+              Tab(icon: Icon(Icons.image), text: "Medias",),
             ],
           ),
         title: const Text(appname),
@@ -172,7 +258,10 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
           ),
           IconButton(
             onPressed: (){
-
+              createPageMediaNode(context);
+              setState(() {
+                
+              });
             }, 
             icon: const Icon(Icons.add)
           )
@@ -184,14 +273,15 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
     return ListView.builder(
       itemCount: journeys.length,
       itemBuilder: (context,index){
-        final temp = journeys[index].name;
-        final toRemove = temp.split(" ").last;
-        final name = temp.substring(0,temp.length-toRemove.length-1);
+        final temp = journeys[index];
+        final title = temp!.metadata.split(";")[0].split("=")[1];
         return ListTile(
           leading: Text("${(index+1).toString()}.",style: const TextStyle(fontSize: 16),),
-          title: Text(name),
+          title: Text(title),
           onTap: (){
-            Navigator.pushNamed(context, "/home",arguments: journeys[index]);
+            final myModel = Provider.of<CustomProvider>(context, listen: false);
+            myModel.currentJourney = journeys[index];
+            Navigator.pushNamed(context, "/tracer");
           },
           
         );

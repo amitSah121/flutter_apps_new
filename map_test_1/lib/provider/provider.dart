@@ -8,22 +8,7 @@ class CustomProvider extends ChangeNotifier {
   List<Journey> journeys = [];
   List<PageNode> pageNodes = [];
   List<MediaNode> mediaNodes = [];
-  // String defaultAppPath = "";
-
-  // Future<void> set_auth(us, pa) async{
-  //   // username = us;
-  //   // password = pa;
-  //   notifyListeners();
-  // }
-
-  // void addFiles(p){
-  //   for(var p1 in p['animation']!){
-  //       animationFiles.add(p1);
-  //     }
-  //     for(var p1 in p['tiles']!){
-  //       tileFiles.add(p1);
-  //     }
-  // }
+  Journey ? currentJourney;
 
   Future<void> loadJourney()async{
     journeys = [];
@@ -41,14 +26,16 @@ class CustomProvider extends ChangeNotifier {
     var pn = await listFilesDirs(dir: "pageNode", pattern: "*");
     for(var q in pn){
       var t = await readFile("pageNode/${q.split("/").last}");
-      print(t);
+      // print(t);
       var p = jsonDecode(t);
       pageNodes.add(PageNode.fromJson(p));
     }
 
     var mn = await listFilesDirs(dir: "mediaNode", pattern: "*");
     for(var q in mn){
-      var p = jsonDecode(await readFile("mediaNode/${q.split("/").last}"));
+      var t = await readFile("mediaNode/${q.split("/").last}");
+      // print(t);
+      var p = jsonDecode(t);
       mediaNodes.add(MediaNode.fromJson(p));
     }
   }

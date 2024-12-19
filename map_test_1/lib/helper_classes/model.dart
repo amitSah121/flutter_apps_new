@@ -103,6 +103,7 @@ class MediaNode implements JsonConvertible, CsvConvertible {
   String medialLink;
   bool isMediaHttp; // if media is a web image link
   String text;
+  double mediaHeight;
   int mediaNumber; // used to denote the mediaNode present in a journey
   String metadata;
   static Widget icon = const Icon(Icons.photo);
@@ -115,6 +116,7 @@ class MediaNode implements JsonConvertible, CsvConvertible {
     this.medialLink = "",
     this.isMediaHttp = false,
     this.text = "",
+    required this.mediaHeight,
     required this.mediaNumber,
     this.metadata = "",
   });
@@ -127,12 +129,13 @@ class MediaNode implements JsonConvertible, CsvConvertible {
         medialLink: row[3] as String,
         isMediaHttp: row[4] as bool,
         text: row[5] as String,
-        mediaNumber: row[6] as int,
-        metadata: row[7] as String);
+        mediaHeight: row[6] as double,
+        mediaNumber: row[7] as int,
+        metadata: row[8] as String);
   }
 
   List<dynamic> toCsvRow() {
-    return [pathNumber_1, pathNumber_2, t, medialLink, isMediaHttp, text, mediaNumber, metadata];
+    return [pathNumber_1, pathNumber_2, t, medialLink, isMediaHttp, text, mediaHeight, mediaNumber, metadata];
   }
 
   factory MediaNode.fromJson(Map<String, dynamic> json) {
@@ -143,8 +146,9 @@ class MediaNode implements JsonConvertible, CsvConvertible {
       medialLink: json['medialLink'],
       isMediaHttp: json['isMediaHttp'],
       text: json['text'],
+      mediaHeight: json["mediaHeight"],
       mediaNumber: json['mediaNumber'],
-      metadata: json['metadata'] ?? "", // includes arguments as key value pair separated by ";", so title=datetimeforfilename;.....
+      metadata: json['metadata'] ?? "", // includes arguments as key value pair separated by ";", so fileName=$time;title=Untitled;.....
     );
   }
 
@@ -157,6 +161,7 @@ class MediaNode implements JsonConvertible, CsvConvertible {
       'medialLink': medialLink,
       'isMediaHttp': isMediaHttp,
       'text': text,
+      'mediaHeight': mediaHeight,
       'mediaNumber': mediaNumber,
       'metadata': metadata,
     };
@@ -166,6 +171,11 @@ class MediaNode implements JsonConvertible, CsvConvertible {
 
 class RowMap implements JsonConvertible {
   Map<int, String> rows;
+  // note for media node format is
+  // customUrl/media/images/....[imageformat] __5050__media__5050__ 300
+  // https://....[imageformat] __5050__media__5050__ 300
+  // customUrl/media/images/....[videoFormat] __5050__media__5050__ 300
+  // https://....[videoformat] __5050__media__5050__ 300
 
   RowMap({required this.rows});
 
@@ -186,7 +196,7 @@ class PageNode implements JsonConvertible {
   int pathNumber_1, pathNumber_2;
   double t;
   int pageNumber;
-  String metadata; // includes arguments as key value pair separated by ";", so title=datetimeforfilename;.....
+  String metadata; // includes arguments as key value pair separated by ";", so fileName=$time;title=Untitled;backgroundColor=Colors.White.value.toString();.....
   static Widget icon = const Icon(Icons.bookmark_sharp);
   static Widget icons = const Icon(Icons.bookmarks_sharp);
 
@@ -229,16 +239,14 @@ class Journey{ // note: file name must be saved with a unique number
   List<PageNode> pageNodes = []; // paths of pathNode
   List<MediaNode> mediaNodes = []; // paths of mediaNode
   List<PathNode> pathNodes = []; // path of path node
-  String? name;
+  String? name; // default foldername=$time
+  String metadata = "title=untitled;autopathDone=false"; // title=untitled;
 
   Journey(String folderName){ // folder name of journeys inside journey folder
-    // var id = folderName.split(" ").removeLast(); 
-    // name = folderName.substring(0,folderName.length-id.length-1); // removing id and a space it is separated with from filename
-    // fillVariables(name);
     name = folderName;
   }
 
-  Future<bool> fillVariables() async{
+  Future<bool> fillVariables() async{ 
     var files = await discoverFiles(dir: "$journeyPath/$name"); // journey/journey name1/
     // print({files,"$journeyPath/$name"});
     for (var file in files) {
