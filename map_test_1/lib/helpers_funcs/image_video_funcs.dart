@@ -6,6 +6,30 @@ import 'package:map_test_1/helpers_funcs/file_funcs.dart';
 import 'package:http/http.dart' as http;
 import 'package:map_test_1/helpers_funcs/file_funcs_user_dir.dart';
 import 'package:video_compress/video_compress.dart';
+import 'dart:ui' as ui;
+
+Future<double> getImageAspectRatio(String imagePath) async {
+  try {
+    // Load the image file as bytes
+    final file = await getFile(imagePath);
+    if (!await file.exists()) {
+      // throw Exception("File not found at $imagePath");
+      return 1.0;
+    }
+    final bytes = await file.readAsBytes();
+
+    // Decode the image using dart:ui
+    final codec = await ui.instantiateImageCodec(bytes);
+    final frame = await codec.getNextFrame();
+    final image = frame.image;
+
+    // Calculate the aspect ratio
+    return image.width / image.height;
+  } catch (e) {
+    print("Error getting aspect ratio: $e");
+    return 1.0; // Return null if there is an error
+  }
+}
 
 Future<String> captureImage() async {
   final ImagePicker picker = ImagePicker();

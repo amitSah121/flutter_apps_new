@@ -8,7 +8,8 @@ double deviceWidth = 100, deviceHeight =   100;
 // Home
 final drawerConstHome = {
   "Journey and Notes":Icons.book,
-  "Settings":Icons.settings
+  "Settings":Icons.settings,
+  "Manual": Icons.book_rounded
 };
 const bottomNavBarHome = {
   "Explore": Icons.explore, 
@@ -21,10 +22,20 @@ const List<double> noteDisplaySize = [240,30];
 // Tracer
 const bottomNavBarTracerHome = {
   "stopTracing/tracingDone": [Icons.stop,Icons.done], 
-  "media": Icons.camera,
-  "Home": Icons.home
+  "page/media": [Icons.book, Icons.photo],
+  "select": Icons.all_out_outlined,
 };
 const floatingIconTracerHome = Icons.add;
+
+// manual editor
+const bottomNavBarManualEditor = {
+  "move path": Icons.moving_outlined,
+  "path/page/media": [Icons.grid_goldenratio_sharp, Icons.book, Icons.photo], 
+  "select": Icons.all_out_outlined,
+  "deleteNode": Icons.delete,
+};
+const floatingIconManualEditor = Icons.add;
+
 
 // Journey and Notes
 

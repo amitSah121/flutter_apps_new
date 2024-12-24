@@ -10,22 +10,22 @@ import 'package:map_test_1/helper_classes/model.dart';
 import 'package:map_test_1/pageEditors/video_player.dart';
 
 class MediaReader extends StatefulWidget{
-  const MediaReader({super.key});
+  MediaReader({super.key});
+  MediaNode? mediaNode;
   @override
   State<MediaReader> createState() => _MediaReaderState();
 }
 
 class _MediaReaderState extends State<MediaReader>{
-  MediaNode? mediaNode;
+  // MediaNode? mediaNode;
   bool editing = false;
 
   @override
   Widget build(BuildContext context) {
     final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
     final args = arguments["node"];
-    if (args != null && mediaNode != args) {
-      mediaNode = args as MediaNode;
-      // print(pageNode!.rows.toJson());
+    if (args != null && widget.mediaNode != args && args.runtimeType.toString() == "MediaNode") {
+      widget.mediaNode = args as MediaNode;
     }
 
     var b1 = true;
@@ -34,10 +34,10 @@ class _MediaReaderState extends State<MediaReader>{
     var link = "";
     var t2 = "";
 
-    if(mediaNode != null){
-      link = mediaNode!.medialLink;
+    if(widget.mediaNode != null){
+      link = widget.mediaNode!.medialLink;
       b1 = link.startsWith("customUrl/");
-      height = mediaNode!.mediaHeight;
+      height = widget.mediaNode!.mediaHeight;
 
       var t1 = link.split("/");
       t1.removeAt(0);
@@ -56,7 +56,7 @@ class _MediaReaderState extends State<MediaReader>{
           child: Column(
             children: [
               mediaWidget(context, link, width, height, isImage, b1, t2),
-              textRow(mediaNode == null ? "Write" : mediaNode!.text)
+              textRow(widget.mediaNode == null ? "Write" : widget.mediaNode!.text)
             ]
           ),
         )

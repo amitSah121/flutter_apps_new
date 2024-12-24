@@ -1,9 +1,7 @@
-
-
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:map_test_1/constants/constants.dart';
 import 'package:map_test_1/helpers_funcs/file_funcs.dart';
-
 
 class PathNode implements JsonConvertible, CsvConvertible {
   double longitude;
@@ -16,11 +14,11 @@ class PathNode implements JsonConvertible, CsvConvertible {
   double speed;
   double speedAccuracy;
   DateTime timestamp;
-  String fillColor; // to color circles 
+  String fillColor; // to color circles
   int pathNumber;
   String metadata;
-  static Widget icon = const Icon(Icons.location_on);
-  static Widget icons = const Icon(Icons.location_city);
+  static Widget icon = const Icon(Icons.circle_outlined);
+  static Widget icons = const Icon(Icons.circle);
 
   PathNode({
     required this.longitude,
@@ -37,6 +35,26 @@ class PathNode implements JsonConvertible, CsvConvertible {
     required this.pathNumber,
     this.metadata = "",
   });
+
+  factory PathNode.fromPosition(Position pos, pathNumber) {
+    return PathNode(
+        longitude: pos.longitude,
+        latitude: pos.latitude,
+        accuracy: pos.accuracy,
+        altitude: pos.altitude,
+        altitudeAccuracy: pos.altitudeAccuracy,
+        heading: pos.heading,
+        headingAccuracy: pos.headingAccuracy,
+        speed: pos.speed,
+        speedAccuracy: pos.speedAccuracy,
+        timestamp: pos.timestamp,
+        fillColor: Colors.white.value.toString(),
+        pathNumber: pathNumber);
+  }
+
+  String getType(){
+    return "path";
+  }
 
   factory PathNode.fromCsvRow(List<dynamic> row) {
     return PathNode(
@@ -56,7 +74,15 @@ class PathNode implements JsonConvertible, CsvConvertible {
   }
 
   List<dynamic> toCsvRow() {
-    return [longitude, latitude, altitude, timestamp.toIso8601String(), fillColor, pathNumber, metadata];
+    return [
+      longitude,
+      latitude,
+      altitude,
+      timestamp.toIso8601String(),
+      fillColor,
+      pathNumber,
+      metadata
+    ];
   }
 
   factory PathNode.fromJson(Map<String, dynamic> json) {
@@ -76,6 +102,8 @@ class PathNode implements JsonConvertible, CsvConvertible {
       metadata: json['metadata'] ?? "",
     );
   }
+
+  
 
   @override
   Map<String, dynamic> toJson() {
@@ -98,7 +126,8 @@ class PathNode implements JsonConvertible, CsvConvertible {
 }
 
 class MediaNode implements JsonConvertible, CsvConvertible {
-  int pathNumber_1, pathNumber_2; // number assigned to path nodes that forms an edge
+  int pathNumber_1,
+      pathNumber_2; // number assigned to path nodes that forms an edge
   double t; // t belongs to [0,1]
   String medialLink;
   bool isMediaHttp; // if media is a web image link
@@ -121,6 +150,10 @@ class MediaNode implements JsonConvertible, CsvConvertible {
     this.metadata = "",
   });
 
+  String getType(){
+    return "media";
+  }
+
   factory MediaNode.fromCsvRow(List<dynamic> row) {
     return MediaNode(
         pathNumber_1: row[0] as int,
@@ -135,7 +168,17 @@ class MediaNode implements JsonConvertible, CsvConvertible {
   }
 
   List<dynamic> toCsvRow() {
-    return [pathNumber_1, pathNumber_2, t, medialLink, isMediaHttp, text, mediaHeight, mediaNumber, metadata];
+    return [
+      pathNumber_1,
+      pathNumber_2,
+      t,
+      medialLink,
+      isMediaHttp,
+      text,
+      mediaHeight,
+      mediaNumber,
+      metadata
+    ];
   }
 
   factory MediaNode.fromJson(Map<String, dynamic> json) {
@@ -148,7 +191,8 @@ class MediaNode implements JsonConvertible, CsvConvertible {
       text: json['text'],
       mediaHeight: json["mediaHeight"],
       mediaNumber: json['mediaNumber'],
-      metadata: json['metadata'] ?? "", // includes arguments as key value pair separated by ";", so fileName=$time;title=Untitled;.....
+      metadata: json['metadata'] ??
+          "", // includes arguments as key value pair separated by ";", so fileName=$time;title=Untitled;.....
     );
   }
 
@@ -167,7 +211,6 @@ class MediaNode implements JsonConvertible, CsvConvertible {
     };
   }
 }
-
 
 class RowMap implements JsonConvertible {
   Map<int, String> rows;
@@ -196,7 +239,8 @@ class PageNode implements JsonConvertible {
   int pathNumber_1, pathNumber_2;
   double t;
   int pageNumber;
-  String metadata; // includes arguments as key value pair separated by ";", so fileName=$time;title=Untitled;backgroundColor=Colors.White.value.toString();.....
+  String
+      metadata; // includes arguments as key value pair separated by ";", so fileName=$time;title=Untitled;backgroundColor=Colors.White.value.toString();.....
   static Widget icon = const Icon(Icons.bookmark_sharp);
   static Widget icons = const Icon(Icons.bookmarks_sharp);
 
@@ -220,6 +264,10 @@ class PageNode implements JsonConvertible {
     );
   }
 
+  String getType(){
+    return "page";
+  }
+
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -233,39 +281,47 @@ class PageNode implements JsonConvertible {
   }
 }
 
-
-
-class Journey{ // note: file name must be saved with a unique number
+class Journey {
+  // note: file name must be saved with a unique number
   List<PageNode> pageNodes = []; // paths of pathNode
   List<MediaNode> mediaNodes = []; // paths of mediaNode
   List<PathNode> pathNodes = []; // path of path node
   String? name; // default foldername=$time
-  String metadata = "title=untitled;autopathDone=false"; // title=untitled;
+  String metadata = "title=untitled;autopathDone=false"; // title=untitled; if authpath=none then goes to tracer otherwise manualeditor
 
-  Journey(String folderName){ // folder name of journeys inside journey folder
+  Journey(String folderName) {
+    // folder name of journeys inside journey folder
     name = folderName;
   }
 
-  Future<bool> fillVariables() async{ 
-    var files = await discoverFiles(dir: "$journeyPath/$name"); // journey/journey name1/
+  String getType(){
+    return "journey";
+  }
+
+  Future<bool> fillVariables() async {
+    var files = await discoverFiles(
+        dir: "$journeyPath/$name"); // journey/journey name1/
     // print({files,"$journeyPath/$name"});
     for (var file in files) {
-      if (file.path.contains("pathnode")) {
+      if (file.path.contains("pathNode")) {
         String fileName = file.path.split('/').last;
-        var csv = await readCsv("$journeyPath/$name/$fileName",(row) => PathNode.fromCsvRow(row));
-        pathNodes = csv;
-      } else if (file.path.contains("pagenode")) {
+        var json = await readJson(
+            "$journeyPath/$name/$fileName", (row) => PathNode.fromJson(row));
+        pathNodes = json;
+      } else if (file.path.contains("pageNode")) {
         String fileName = file.path.split('/').last;
-        var json = await readJson("$journeyPath/$name/$fileName",(row) => PageNode.fromJson(row));
+        var json = await readJson(
+            "$journeyPath/$name/$fileName", (row) => PageNode.fromJson(row));
         pageNodes = json;
-      } else if (file.path.contains("medianode")) {
+      } else if (file.path.contains("mediaNode")) {
         String fileName = file.path.split('/').last;
-        var json = await readJson("$journeyPath/$name/$fileName",(row) => MediaNode.fromJson(row));
+        var json = await readJson(
+            "$journeyPath/$name/$fileName", (row) => MediaNode.fromJson(row));
         mediaNodes = json;
       }
     }
+    // writeFile("$journeyPath/$name/metadata", metadata);
+    metadata = await readFile("$journeyPath/$name/metadata");
     return true;
   }
-
-
 }

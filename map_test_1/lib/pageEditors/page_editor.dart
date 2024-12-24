@@ -27,6 +27,7 @@ class _PageEditorState extends State<PageEditor> with WidgetsBindingObserver{
   PageNode? pageNode;
   var focusNode = FocusNode();
   var path = "";
+  int currentSelectedToDrag = -1;
 
   @override
   void initState(){
@@ -49,11 +50,11 @@ class _PageEditorState extends State<PageEditor> with WidgetsBindingObserver{
     super.didChangeAppLifecycleState(state);
 
     if (state == AppLifecycleState.paused) {
-      if(path.isEmpty) return ;
       if(pageNode != null){
         var p = pageNode!.metadata.split(";");
         p[2] = "backgroundColor=${bgcolor.value.toString()}";
         pageNode!.metadata = p.join(";");
+        if(path.isEmpty) return ;
         var t = pageNode!.toJson();
         writeFile(path, jsonEncode(t));
         // pageNode/${pageNode!.metadata.split(";")[0].split("=")[1]}
@@ -84,6 +85,8 @@ class _PageEditorState extends State<PageEditor> with WidgetsBindingObserver{
           pageNode!.metadata = p.join(";");
           // print(p);
           var t = pageNode!.toJson();
+
+          if(path.isEmpty)return;
           writeFile(path, jsonEncode(t));
           // pageNode/${pageNode!.metadata.split(";")[0].split("=")[1]}
         }
@@ -131,6 +134,7 @@ class _PageEditorState extends State<PageEditor> with WidgetsBindingObserver{
             return index < itemsLength
                 ? textMediaEditor(rows, rows!.rows.keys.toList()[index],index)
                 : SizedBox(
+                  key: Key(index.toString()),
                     height: 120,
                     width: MediaQuery.of(context).size.width,
                     child: Row(
@@ -199,7 +203,8 @@ class _PageEditorState extends State<PageEditor> with WidgetsBindingObserver{
     controller.text = t;
     var keys = rows.rows.keys.toList();
     return GestureDetector(
-      onLongPress: () {
+      
+      onDoubleTap: () {
         showDialog(
             context: context,
             builder: (context) {
@@ -208,39 +213,9 @@ class _PageEditorState extends State<PageEditor> with WidgetsBindingObserver{
                 title: const Text("Text"),
                 content: SizedBox(
                   width: 40,
-                  height: 64 * 3,
+                  height: 64 * 1,
                   child: ListView(
                     children: [
-                      if(indexPos-1 >= 0)
-                      SizedBox(
-                        width: 40,
-                        child: ListTile(
-                          title: const Text("Move Up"),
-                          leading: const Icon(Icons.arrow_upward),
-                          onTap: () {
-                            moveMapEntry(rows.rows, keys[indexPos], keys[indexPos-1]);
-                            // print(rows.rows);
-                            setState(() {
-                              Navigator.pop(context);
-                            });
-                          },
-                        ),
-                      ),
-                      if(indexPos+1 < keys.length)
-                      SizedBox(
-                        width: 40,
-                        child: ListTile(
-                          title: const Text("Move Down"),
-                          leading: const Icon(Icons.arrow_downward),
-                          onTap: () {
-                            moveMapEntry(rows.rows,keys[indexPos], keys[indexPos+1]);
-                            // print(rows.rows);
-                            setState(() {
-                              Navigator.pop(context);
-                            });
-                          },
-                        ),
-                      ),
                       SizedBox(
                         width: 40,
                         child: ListTile(
@@ -266,29 +241,62 @@ class _PageEditorState extends State<PageEditor> with WidgetsBindingObserver{
           
         });
       },
-      child: Container(
-          width: MediaQuery.of(context).size.width-16,
-          padding: const EdgeInsets.only(top: 8.0),
-          decoration: BoxDecoration(color: bgcolor),
-          child: b
-              ? TextField(
-                  controller: controller,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(borderSide: BorderSide(color: Colors.black.withAlpha(10))),
-                    hintText: 'Write', // Hint text without a border
-                  ),
-                  style: const TextStyle(fontSize: 16, color: Colors.black),
-                  cursorColor: Colors.black,
-                  readOnly: widget.readOnly,
-                  maxLines: null,
-                  // focusNode: focusNode,
-                  onChanged: (value){
-                    rows.rows[index] = value;
-                  },
-                )
-              : CustomMarkdown(
-                  data: t,
-                )),
+      child: DragTarget(
+        builder: (context, candidate, rejected){
+        return LongPressDraggable(
+          data: '$indexPos',
+          feedback: Container(
+            key: Key(index.toString()),
+            width: MediaQuery.of(context).size.width,
+            height: 64,
+            color: Colors.blue.withOpacity(0.5),
+            child:Container(
+              width: MediaQuery.of(context).size.width,
+              height: 64,
+              color: Colors.blue.withOpacity(0.5),
+            ),
+          ),
+          childWhenDragging: Container(
+            width: MediaQuery.of(context).size.width,
+            height: 64,
+            color: Colors.blue.withOpacity(0.5),
+          ),
+          child: Container(
+              width: MediaQuery.of(context).size.width-16,
+              padding: const EdgeInsets.only(top: 8.0),
+              decoration: BoxDecoration(color: bgcolor),
+              child: b
+                  ? TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(borderSide: BorderSide(color: Colors.black.withAlpha(10))),
+                        hintText: 'Write', // Hint text without a border
+                      ),
+                      style: const TextStyle(fontSize: 16, color: Colors.black),
+                      cursorColor: Colors.black,
+                      readOnly: widget.readOnly,
+                      maxLines: null,
+                      // focusNode: focusNode,
+                      onChanged: (value){
+                        rows.rows[index] = value;
+                      },
+                    )
+                  : CustomMarkdown(
+                      data: t,
+                    )),
+          );
+        },
+        onWillAcceptWithDetails: (v){
+          return true;
+        },
+        onAcceptWithDetails: (v){
+          // print(v.data);
+          moveMapEntry(rows.rows,keys[int.parse(v.data as String)], keys[indexPos]);
+          setState(() {
+          });
+          
+        },  
+      ),
     );
   }
 
@@ -352,7 +360,7 @@ class _PageEditorState extends State<PageEditor> with WidgetsBindingObserver{
                 );
               });
         },
-        onLongPress: (){
+        onDoubleTap: (){
           showDialog(
               context: context,
               builder: (context) {
@@ -389,93 +397,99 @@ class _PageEditorState extends State<PageEditor> with WidgetsBindingObserver{
                             },
                           ),
                         ),
-                        if(indexPos-1 >= 0)
-                        SizedBox(
-                          width: 40,
-                          child: ListTile(
-                            title: const Text("Move Up"),
-                            leading: const Icon(Icons.arrow_upward),
-                            onTap: () {
-                              moveMapEntry(rows.rows, keys[indexPos], keys[indexPos-1]);
-                              // print(rows.rows);
-                              setState(() {
-                                Navigator.pop(context);
-                              });
-                            },
-                          ),
-                        ),
-                        if(indexPos+1 < keys.length)
-                        SizedBox(
-                          width: 40,
-                          child: ListTile(
-                            title: const Text("Move Down"),
-                            leading: const Icon(Icons.arrow_downward),
-                            onTap: () {
-                              moveMapEntry(rows.rows,keys[indexPos], keys[indexPos+1]);
-                              // print(rows.rows);
-                              setState(() {
-                                Navigator.pop(context);
-                              });
-                            },
-                          ),
-                        ),
                       ],
                     ),
                   ),
                 );
               });
         },
-        child: b2
-            ? Padding(
-                padding: const EdgeInsets.only(top: 8),
-              child: Container(
-                  decoration: const BoxDecoration(color: Colors.grey),
-                  width: width,
-                  height: height,
-                ),
-            )
-            : Stack(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top:8),
-                  child: (isImage
-                    ? ( !b1 ?
-                      Image.network(
-                        parsedT,
+        child: DragTarget(
+        builder: (context, candidate, rejected){
+          return LongPressDraggable(
+            data: '$indexPos',
+            feedback: Container(
+              key: Key(index.toString()),
+              width: MediaQuery.of(context).size.width,
+              height: 64,
+              color: Colors.blue.withOpacity(0.5),
+              child:Container(
+                width: MediaQuery.of(context).size.width,
+                height: 64,
+                color: Colors.blue.withOpacity(0.5),
+              ),
+            ),
+            childWhenDragging: Container(
+              width: MediaQuery.of(context).size.width,
+              height: height,
+              color: Colors.blue.withOpacity(0.5),
+            ),
+            child: (b2
+              ? Padding(
+                  key: Key(index.toString()),
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Container(
+                    decoration: const BoxDecoration(color: Colors.grey),
+                    width: width,
+                    height: height,
+                  ),
+              )
+              : Stack(
+                key: Key(index.toString()),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top:8),
+                    child: (isImage
+                      ? ( !b1 ?
+                        Image.network(
+                          parsedT,
+                          width: width,
+                          height: height,
+                          fit: BoxFit.cover,
+                        )
+                      : Image.file(
+                          File("$defaultAppPath/$t2"),
+                          width: width,
+                          height: height,
+                          fit: BoxFit.cover,
+                        )
+                      )
+                      :
+                      VideoDisplay(
+                        b1: b1,
+                        parsedT: parsedT,
+                        t2: t2,
+                        defaultAppPath: defaultAppPath,
                         width: width,
                         height: height,
-                        fit: BoxFit.cover,
-                      )
-                    : Image.file(
-                        File("$defaultAppPath/$t2"),
-                        width: width,
-                        height: height,
-                        fit: BoxFit.cover,
                       )
                     )
-                    :
-                    VideoDisplay(
-                      b1: b1,
-                      parsedT: parsedT,
-                      t2: t2,
-                      defaultAppPath: defaultAppPath,
-                      width: width,
-                      height: height,
+                  ),
+                  if(t2.contains("live_"))
+                  const Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Padding(
+                      padding: EdgeInsets.all(12.0),
+                      child: Icon(Icons.radio_button_checked,color: Colors.red,),
                     )
-                  )
-                ),
-                if(t2.contains("live_"))
-                const Positioned(
-                  top: 0,
-                  right: 0,
-                  child: Padding(
-                    padding: EdgeInsets.all(12.0),
-                    child: Icon(Icons.radio_button_checked,color: Colors.red,),
-                  )
-                ),
-              ]
+                  ),
+                ]
+              )
             )
-            );
+          );
+        },
+        onWillAcceptWithDetails: (v){
+          return true;
+        },
+        onAcceptWithDetails: (v){
+          // print(v.data);
+          moveMapEntry(rows.rows,keys[int.parse(v.data as String)], keys[indexPos]);
+          setState(() {
+          });
+          
+        },  
+      )
+    );
   }
 
   Future<dynamic> heightAdjudtMedia(BuildContext context, double height, int index) {
@@ -567,6 +581,10 @@ class _PageEditorState extends State<PageEditor> with WidgetsBindingObserver{
                         p.insert(0,"customUrl/media/images/${targetPath.split("/").last}");
                       }else if(p.length > 2){
                         p[0] = "customUrl/media/images/${targetPath.split("/").last}";
+                      }
+                      if(p.length > 2){
+                        var temp = await getImageAspectRatio("media/images/${targetPath.split("/").last}");
+                        p[2] = (MediaQuery.of(context).size.width/temp).toString();
                       }
                       rows.rows[index] = p.join(" ");
                       setState(() {

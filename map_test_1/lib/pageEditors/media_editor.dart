@@ -84,6 +84,7 @@ class _MediaEditorState extends State<MediaEditor> with WidgetsBindingObserver{
     
     return PopScope(
       onPopInvokedWithResult: (b, val){
+        if(path.isEmpty) return ;
         if(mediaNode != null){
           // print(p);
           var t = mediaNode!.toJson();
@@ -360,6 +361,8 @@ class _MediaEditorState extends State<MediaEditor> with WidgetsBindingObserver{
                         return;
                       }
                       mediaNode?.medialLink = "customUrl/media/images/${targetPath.split("/").last}";
+                      var temp = await getImageAspectRatio("media/images/${targetPath.split("/").last}");
+                      mediaNode?.mediaHeight = MediaQuery.of(context).size.width/temp;
                       setState(() {
                         
                       });

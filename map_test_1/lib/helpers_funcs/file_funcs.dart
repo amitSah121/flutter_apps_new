@@ -64,6 +64,28 @@ Future<void> deleteDir(String dirName) async {
 }
 
 
+Future<void> deleteDirRecursive(String dirName) async {
+  try {
+    // Get the application documents directory
+    final directory = await getApplicationDocumentsDirectory();
+    final dirPath = '${directory.path}/$dirName';
+
+    // Create a Directory object
+    final dir = Directory(dirPath);
+
+    // Check if the directory exists
+    if (await dir.exists()) {
+      // Delete the directory and its contents recursively
+      await dir.delete(recursive: true);
+      print('Directory $dirName deleted successfully.');
+    } else {
+      print('Directory $dirName does not exist.');
+    }
+  } catch (e) {
+    print('Failed to delete directory $dirName: $e');
+  }
+}
+
 
 Future<List<File>> discoverFiles({String dir = "",String extensions = ""}) async {
   String path = await localPath;

@@ -7,7 +7,8 @@ import 'package:map_test_1/helper_classes/model.dart';
 import 'package:map_test_1/pageEditors/video_player.dart';
 
 class PageReader extends StatefulWidget {
-  const PageReader({super.key});
+  PageReader({super.key});
+  PageNode? pageNode;
   @override
   State<PageReader> createState() => _PageReaderState();
 }
@@ -15,19 +16,23 @@ class PageReader extends StatefulWidget {
 class _PageReaderState extends State<PageReader> {
   Color bgcolor = Colors.white;
   RowMap rows = RowMap(rows: {});
-  PageNode? pageNode;
+  // PageNode? pageNode;
 
 
   @override
   Widget build(BuildContext context) {
     final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
     final args = arguments["node"];
-    if (args != null && rows != args) {
-      pageNode = args as PageNode;
-      rows = pageNode!.rows;
-      var p = pageNode!.metadata.split(";");
+    if (args != null && rows != args && args.runtimeType.toString() == "PageNode") {
+      widget.pageNode = args as PageNode;
+      rows = widget.pageNode!.rows;
+      var p = widget.pageNode!.metadata.split(";");
       bgcolor = bgcolor == Colors.white ? Color(int.parse(p[2].split("=")[1])) : bgcolor;
-      // print(pageNode!.rows.toJson());
+      // print(widget.pageNode!.rows.toJson());
+    }else if(widget.pageNode != null){
+      rows = widget.pageNode!.rows;
+      var p = widget.pageNode!.metadata.split(";");
+      bgcolor = bgcolor == Colors.white ? Color(int.parse(p[2].split("=")[1])) : bgcolor;
     }
     int itemsLength = rows.rows.length;
     return Scaffold(
@@ -52,17 +57,6 @@ class _PageReaderState extends State<PageReader> {
     );
   }
 
-  SizedBox addElementButton(
-      BuildContext context, double factor, String name, GestureTapCallback f) {
-    return SizedBox(
-      height: 60,
-      width: MediaQuery.of(context).size.width / factor,
-      child: TextButton(
-        onPressed: f,
-        child: Text(name),
-      ),
-    );
-  }
 
   Widget textMediaReader(RowMap? rows, int index, int indexPos) {
     // var t = "# Hello \n## Fello \n I am **the** don \n and then \n|This is|The best that I can say about|\n|1|2|";

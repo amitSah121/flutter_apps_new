@@ -61,7 +61,12 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
           leading: Text("${(index+1).toString()}.",style: const TextStyle(fontSize: 16),), // number
           title: Text(pageNodes[index].metadata.split(";")[1].split("=")[1]), // title
           onTap: (){
-            Navigator.pushNamed(context, "/pageEditor",arguments: {"node":pageNodes[index],"path":path});
+            Future.microtask(()async{
+              await Navigator.pushNamed(context, "/pageEditor",arguments: {"node":pageNodes[index],"path":path});
+              setState(() {
+                
+              });
+            });
           },
           onLongPress: (){
             showBottomSheet(
@@ -156,7 +161,12 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
           leading: Text("${(index+1).toString()}.",style: const TextStyle(fontSize: 16),),
           title: Text(mediaNodes[index].metadata.split(";")[1].split("=")[1]),
           onTap: (){
-            Navigator.pushNamed(context, "/mediaEditor",arguments: {"node":mediaNodes[index],"path":path});
+            Future.microtask(()async{
+              await Navigator.pushNamed(context, "/mediaEditor",arguments: {"node":mediaNodes[index],"path":path});
+              setState(() {
+                
+              });
+            });
           },
           onLongPress: (){
             showBottomSheet(
@@ -257,11 +267,8 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
             icon: const Icon(Icons.notifications)
           ),
           IconButton(
-            onPressed: (){
-              createPageMediaNode(context);
-              setState(() {
-                
-              });
+            onPressed: ()async {
+              await createPageMediaNode(context, setState);
             }, 
             icon: const Icon(Icons.add)
           )
@@ -274,16 +281,117 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
       itemCount: journeys.length,
       itemBuilder: (context,index){
         final temp = journeys[index];
+        // print(temp.metadata);
         final title = temp!.metadata.split(";")[0].split("=")[1];
         return ListTile(
           leading: Text("${(index+1).toString()}.",style: const TextStyle(fontSize: 16),),
           title: Text(title),
+          trailing: journeys[index]!.metadata.split(";")[1].split("=")[1] == "none" ? const Icon(Icons.circle) : const Icon(Icons.accessibility_rounded),
           onTap: (){
             final myModel = Provider.of<CustomProvider>(context, listen: false);
+            var tempJ = myModel.currentJourney;
             myModel.currentJourney = journeys[index];
-            Navigator.pushNamed(context, "/tracer");
+            if(myModel.currentJourney!.metadata.split(";")[1].split("=")[1] == "none"){
+              Future.microtask(()async{
+                await Navigator.pushNamed(context, "/manualEditor");
+                myModel.currentJourney = tempJ;
+                // print("result = $result");
+              });
+            }else{
+              Future.microtask(()async{
+                myModel.currentJourney = journeys[index];
+                await Navigator.pushNamed(context, "/tracer");
+                // print("result = $result");
+              });
+            }
           },
-          
+          onLongPress: (){
+            showBottomSheet(
+              context: context, 
+              builder: (context){
+                return Wrap(children: <Widget>[
+                  ListTile(
+                    leading: const Icon(Icons.imagesearch_roller),
+                    title: const Text("View As Story"),
+                    onTap: (){
+                      Navigator.pop(context);
+                      Future.microtask(()async{
+                        await Navigator.pushNamed(context, "/viewAsStory",arguments: {"node":journeys[index]});
+                      });
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.edit),
+                    title: const Text(' Rename'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showDialog(
+                        context: context, 
+                        builder: (context){
+                          var controller = TextEditingController();
+                          controller.text = journeys[index].metadata.split(";")[0].split("=")[1];
+                          return AlertDialog(
+                            alignment: Alignment.center,
+                            title: const Text("Rename"),
+                            content: TextField(
+                              controller: controller,
+                              onChanged: (value) {
+                                var p1 = journeys[index].metadata.split(";");
+                                p1[0] = "title=$value";
+                                journeys[index].metadata = p1.join(";");
+                                // print(mediaNodes[])
+                              },
+                              onSubmitted: (value){
+                                setState(() {
+                                  var t = journeys[index].toJson();
+                                  writeFile("journey/${journeys[index].name}/metadata", jsonEncode(t));
+                                  Navigator.pop(context);
+                                });
+                              },
+                            ),
+                          );
+                        }
+                      );
+                    }
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.delete),
+                    title: const Text(' Delete'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return SimpleDialog(
+                            title: const Text('Delete node?'),
+                            children: [
+                              SimpleDialogOption(
+                                onPressed: (){
+                                  Future.microtask(()async{
+                                    await deleteDirRecursive("$journeyPath/${journeys[index].name}");
+                                    journeys.removeAt(index);
+                                    setState(() {
+                                      Navigator.pop(context);
+                                    });
+                                  });
+                                },
+                                child: const Text('Ok'),
+                              ),
+                              SimpleDialogOption(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Cancel'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+
+                    }
+                  ),
+                ]);
+              }
+            );
+          },
         );
       });
   }

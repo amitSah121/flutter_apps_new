@@ -6,15 +6,18 @@ import 'package:map_test_1/helpers_funcs/file_funcs.dart';
 import 'package:map_test_1/helpers_funcs/file_funcs_user_dir.dart';
 import 'package:map_test_1/home.dart';
 import 'package:map_test_1/journey_notes/journey_notes_home.dart';
+import 'package:map_test_1/manual/manual_home.dart';
 import 'package:map_test_1/notifications/notification_home.dart';
 import 'package:map_test_1/pageEditors/media_reader.dart';
 import 'package:map_test_1/pageEditors/page_editor.dart';
 import 'package:map_test_1/pageEditors/media_editor.dart';
 import 'package:map_test_1/pageEditors/page_reader.dart';
+import 'package:map_test_1/pageEditors/view_as_story.dart';
 import 'package:map_test_1/profile/profile_home.dart';
 import 'package:map_test_1/provider/provider.dart';
 import 'package:map_test_1/search/searchHome.dart';
 import 'package:map_test_1/settings/settings.dart';
+import 'package:map_test_1/tracer/manual_editor.dart';
 import 'package:map_test_1/tracer/tracer_home.dart';
 import 'package:provider/provider.dart';
 
@@ -69,9 +72,27 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver{
 
       await getUserDirectory();
 
-      await listFilesDirs(dir: "",pattern: "*/*");
+      // await listFilesDirs(dir: "",pattern: "*/*");
     });
+    
 
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    print(state);
+    if(state == AppLifecycleState.paused){
+      print("paused");
+    }else if(state == AppLifecycleState.resumed){
+      print("resumed");
+    }else if(state == AppLifecycleState.detached){
+      print("detached");
+    }else if(state == AppLifecycleState.hidden){
+      print("hidden");
+    }else if(state == AppLifecycleState.inactive){
+      print("inactive");
+    }
   }
 
   @override
@@ -101,8 +122,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver{
         "/notifications": (context) => const NotificationHome(),
         "/pageEditor": (context) => const PageEditor(),
         "/mediaEditor": (context) => const MediaEditor(),
-        "/pageReader": (context) => const PageReader(),
-        "/mediaReader": (context) => const MediaReader(),
+        "/pageReader": (context) => PageReader(),
+        "/mediaReader": (context) => MediaReader(),
+        "/manualEditor": (context) => const ManualEditor(),
+        "/manualPage": (context) => const ManualHome(),
+        "/viewAsStory": (context) => const ViewAsStory()
       },
       debugShowCheckedModeBanner: false,
     );

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:map_test_1/constants/constants.dart';
 import 'package:map_test_1/helper_classes/model.dart';
 import 'package:map_test_1/helpers_funcs/file_funcs.dart';
 
@@ -12,7 +13,7 @@ class CustomProvider extends ChangeNotifier {
 
   Future<void> loadJourney()async{
     journeys = [];
-    var journeyDirs = await listFilesDirs(dir: "journey", pattern: "*");
+    var journeyDirs = await listFilesDirs(dir: journeyPath, pattern: "*");
     for(var q in journeyDirs){
       var p = Journey(q.split("/").last);
       await p.fillVariables();
