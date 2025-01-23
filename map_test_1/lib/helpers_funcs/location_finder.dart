@@ -25,3 +25,8 @@ Future<Position> determinePosition() async {
 
   return await Geolocator.getCurrentPosition();
 }
+
+Future<Position> determinePositionWithoutCallingPermission() async {
+  return await Geolocator.getCurrentPosition();
+}
+

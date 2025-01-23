@@ -17,8 +17,8 @@ class PathNode implements JsonConvertible, CsvConvertible {
   String fillColor; // to color circles
   int pathNumber;
   String metadata;
-  static Widget icon = const Icon(Icons.circle_outlined);
-  static Widget icons = const Icon(Icons.circle);
+  static Widget icon = const Icon(Icons.circle,size: 8,);
+  static Widget icons = const Icon(Icons.circle, size: 4,);
 
   PathNode({
     required this.longitude,
@@ -319,6 +319,7 @@ class Journey {
             "$journeyPath/$name/$fileName", (row) => MediaNode.fromJson(row));
         mediaNodes = json;
       }
+      // print("$journeyPath/$name");
     }
     // writeFile("$journeyPath/$name/metadata", metadata);
     metadata = await readFile("$journeyPath/$name/metadata");

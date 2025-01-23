@@ -343,17 +343,18 @@ class _PageEditorState extends State<PageEditor> with WidgetsBindingObserver{
                             },
                           ),
                         ),
-                        SizedBox(
-                          width: 40,
-                          child: ListTile(
-                            title: const Text("Upload"),
-                            leading: const Icon(Icons.upload),
-                            onTap: () {
-                              Navigator.pop(context);
-                              uoloadLinkFunc(context, index);
-                            },
-                          ),
-                        )
+                        // remove uploading link for the time being
+                        // SizedBox(
+                        //   width: 40,
+                        //   child: ListTile(
+                        //     title: const Text("Upload"),
+                        //     leading: const Icon(Icons.upload),
+                        //     onTap: () {
+                        //       Navigator.pop(context);
+                        //       uoloadLinkFunc(context, index);
+                        //     },
+                        //   ),
+                        // )
                       ],
                     ),
                   ),

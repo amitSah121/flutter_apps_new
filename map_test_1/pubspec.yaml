@@ -7,12 +7,15 @@ environment:
   sdk: ^3.5.4
 
 dependencies:
+  crypto: ^3.0.6
   csv: ^6.0.0
+  encrypt: ^5.0.3
   flutter:
     sdk: flutter
   flutter_foreground_task: ^8.17.0
   flutter_image_compress: ^2.3.0
   flutter_map: ^7.0.2
+  flutter_map_marker_cluster: ^1.4.0
   flutter_map_tile_caching: ^9.1.4
   flutter_material_color_picker: ^1.2.0
   geolocator: ^13.0.2

@@ -19,6 +19,10 @@ class JourneyNotesHome extends StatefulWidget{
 
 class _JourneyNotesHomeState extends State<JourneyNotesHome>{
   var journeys = [];
+  var controller = TextEditingController();
+  var resultsPageNodes = [];
+  var resultsMediaNodes = [];
+  var resultsJourneys = [];
 
   @override
   void initState() {
@@ -52,12 +56,63 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
   Widget pageNodes(context){
     final myModel = Provider.of<CustomProvider>(context, listen: false);
     var pageNodes =  myModel.pageNodes;
-    var totalItems = pageNodes.length;
+    // var totalItems = pageNodes.length;
+    int i1 = -1;
+    if(resultsPageNodes.isEmpty){
+      resultsPageNodes = pageNodes.map((k){
+        i1++;
+        return i1;
+      }).toList();
+    }
     return ListView.builder(
-      itemCount: totalItems,
-      itemBuilder: (context,index){
-        var path = 'pageNode/${pageNodes[index].metadata.split(";")[0].split("=")[1]}';
-        return ListTile(
+      itemCount: resultsPageNodes.length+1,
+      itemBuilder: (context,index1){
+        var index2 = index1 - 1 ;
+        var index = index2 >=0 ? resultsPageNodes[index2] : 0;
+        var path;
+        if(resultsPageNodes.length > 0){
+          path = 'pageNode/${pageNodes[index].metadata.split(";")[0].split("=")[1]}';
+        }
+        return index1 == 0? 
+        Container(
+          padding: const EdgeInsets.all(8),
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderSide: BorderSide(color: Colors.black.withAlpha(10)),borderRadius: const BorderRadius.all(Radius.circular(16))),
+              hintText: 'Search Text ...', // Hint text without a border
+            ),
+            onSubmitted: (v){
+              resultsPageNodes = [];
+              if(v.isEmpty){
+                int i=-1;
+                resultsPageNodes = pageNodes.map((k){
+                  i++;
+                  return i;
+                }).toList();
+                setState(() {
+                  
+                });
+                return;
+              }
+              int i=0;
+              for(var p1 in pageNodes){
+                var t = p1.metadata.toLowerCase();
+                for(var q1 in p1.rows.rows.values){
+                  t += ";${q1.toLowerCase()}";
+                }
+                if(t.contains(v.toLowerCase())){
+                  resultsPageNodes.add(i);
+                }
+                i++;
+              }
+              setState(() {
+                
+              });
+            },
+          ),
+        )
+        :ListTile(
           leading: Text("${(index+1).toString()}.",style: const TextStyle(fontSize: 16),), // number
           title: Text(pageNodes[index].metadata.split(";")[1].split("=")[1]), // title
           onTap: (){
@@ -122,6 +177,10 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
                                   Future.microtask(()async{
                                     await deleteFile("pageNode/${pageNodes[index].metadata.split(";")[0].split("=")[1]}");
                                     pageNodes.removeAt(index);
+                                    resultsPageNodes = pageNodes.map((k){
+                                      i1++;
+                                      return i1;
+                                    }).toList();
                                     setState(() {
                                       Navigator.pop(context);
                                     });
@@ -152,12 +211,62 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
   Widget mediaNodes(context){
     final myModel = Provider.of<CustomProvider>(context, listen: false);
     var mediaNodes = myModel.mediaNodes;
-    var totalItems = mediaNodes.length;
+    // var totalItems = mediaNodes.length;
+    int i1 = -1;
+    if(resultsMediaNodes.isEmpty){
+      resultsMediaNodes = mediaNodes.map((k){
+        i1++;
+        return i1;
+      }).toList();
+    }
+    // print(resultsMediaNodes);
     return ListView.builder(
-      itemCount: totalItems,
-      itemBuilder: (context,index){
-        var path = 'mediaNode/${mediaNodes[index]!.metadata.split(";")[0].split("=")[1]}';
-        return ListTile(
+      itemCount: resultsMediaNodes.length+1,
+      itemBuilder: (context,index1){
+        var index2 = index1 - 1 ;
+        var index = index2 >=0 ? resultsMediaNodes[index2] : 0;
+        var path;
+        if(resultsMediaNodes.length > 0){
+          path = 'mediaNode/${mediaNodes[index].metadata.split(";")[0].split("=")[1]}';
+        }
+        return index1 == 0? 
+        Container(
+          padding: const EdgeInsets.all(8),
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderSide: BorderSide(color: Colors.black.withAlpha(10)),borderRadius: const BorderRadius.all(Radius.circular(16))),
+              hintText: 'Search Text ...', // Hint text without a border
+            ),
+            onSubmitted: (v){
+              resultsMediaNodes = [];
+              if(v.isEmpty){
+                int i=-1;
+                resultsMediaNodes = mediaNodes.map((k){
+                  i++;
+                  return i;
+                }).toList();
+                setState(() {
+                  
+                });
+                return;
+              }
+              int i=0;
+              for(var p1 in mediaNodes){
+                var t = p1.metadata.toLowerCase();
+                t += ";${p1.text.toLowerCase()}";
+                if(t.contains(v.toLowerCase())){
+                  resultsMediaNodes.add(i);
+                }
+                i++;
+              }
+              setState(() {
+                
+              });
+            },
+          ),
+        )
+        :ListTile(
           leading: Text("${(index+1).toString()}.",style: const TextStyle(fontSize: 16),),
           title: Text(mediaNodes[index].metadata.split(";")[1].split("=")[1]),
           onTap: (){
@@ -223,6 +332,10 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
                                   Future.microtask(()async{
                                     await deleteFile("mediaNode/${mediaNodes[index].metadata.split(";")[0].split("=")[1]}");
                                     mediaNodes.removeAt(index);
+                                    resultsMediaNodes = mediaNodes.map((k){
+                                      i1++;
+                                      return i1;
+                                    }).toList();
                                     setState(() {
                                       Navigator.pop(context);
                                     });
@@ -277,13 +390,68 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
   }
   
   journeyWidget(BuildContext context) {
+    int i1 = -1;
+    if(resultsJourneys.isEmpty){
+      resultsJourneys = journeys.map((k){
+        i1++;
+        return i1;
+      }).toList();
+    }
     return ListView.builder(
-      itemCount: journeys.length,
-      itemBuilder: (context,index){
-        final temp = journeys[index];
-        // print(temp.metadata);
-        final title = temp!.metadata.split(";")[0].split("=")[1];
-        return ListTile(
+      itemCount: resultsJourneys.length + 1,
+      itemBuilder: (context,index1){
+        var index2 = index1 - 1 ;
+        var index = index2 >=0 ? resultsJourneys[index2] : 0;
+        var title = " ";
+        final temp;
+        if(resultsJourneys.length > 0){
+          temp = journeys[index];
+          // print(temp.metadata);
+          title = temp!.metadata.split(";")[0].split("=")[1];
+        }
+        return index1 == 0? 
+        Container(
+          padding: const EdgeInsets.all(8),
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderSide: BorderSide(color: Colors.black.withAlpha(10)),borderRadius: const BorderRadius.all(Radius.circular(16))),
+              hintText: 'Search Text ...', // Hint text without a border
+            ),
+            onSubmitted: (v){
+              resultsJourneys = [];
+              if(v.isEmpty){
+                int i=-1;
+                resultsJourneys = journeys.map((k){
+                  i++;
+                  return i;
+                }).toList();
+                setState(() {
+                  
+                });
+                return;
+              }
+              int i=0;
+              for(Journey p1 in journeys){
+                var t = p1.metadata.toLowerCase();
+                for(var q1 in p1.pageNodes){
+                  t += ";${q1.metadata};${q1.toJson().toString().toLowerCase()}";
+                }
+                for(var q1 in p1.mediaNodes){
+                  t += ";${q1.metadata};${q1.toJson().toString().toLowerCase()}";
+                }
+                if(t.contains(v.toLowerCase())){
+                  resultsJourneys.add(i);
+                }
+                i++;
+              }
+              setState(() {
+                
+              });
+            },
+          ),
+        )
+        :ListTile(
           leading: Text("${(index+1).toString()}.",style: const TextStyle(fontSize: 16),),
           title: Text(title),
           trailing: journeys[index]!.metadata.split(";")[1].split("=")[1] == "none" ? const Icon(Icons.circle) : const Icon(Icons.accessibility_rounded),
@@ -342,10 +510,11 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
                                 // print(mediaNodes[])
                               },
                               onSubmitted: (value){
-                                setState(() {
+                                Navigator.pop(context);
+                                setState(() async {
                                   var t = journeys[index].toJson();
-                                  writeFile("journey/${journeys[index].name}/metadata", jsonEncode(t));
-                                  Navigator.pop(context);
+                                  await writeFile("journey/${journeys[index].name}/metadata", jsonEncode(t));
+                                  
                                 });
                               },
                             ),
@@ -370,6 +539,10 @@ class _JourneyNotesHomeState extends State<JourneyNotesHome>{
                                   Future.microtask(()async{
                                     await deleteDirRecursive("$journeyPath/${journeys[index].name}");
                                     journeys.removeAt(index);
+                                    resultsJourneys = journeys.map((k){
+                                      i1++;
+                                      return i1;
+                                    }).toList();
                                     setState(() {
                                       Navigator.pop(context);
                                     });

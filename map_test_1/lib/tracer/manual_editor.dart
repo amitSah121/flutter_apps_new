@@ -29,7 +29,7 @@ class _ManualEditorState extends State<ManualEditor> with WidgetsBindingObserver
   var map = MapScreen();
   Journey? searchResult;
   bool openRightDrawer = false;
-  int selectedNode = 0;
+  int selectedNode = 4;
   PathNode? selectedPathNode;
   late Marker currentMarker;
   Object? selectedPageOrMediaNode;
@@ -86,7 +86,7 @@ class _ManualEditorState extends State<ManualEditor> with WidgetsBindingObserver
       map.pageNodes = searchResult!.pageNodes;
       map.mediaNodes = searchResult!.mediaNodes;
       map.goMyLoc = false;
-      map.shouldLessInteract = true;
+      // map.shouldLessInteract = true;
       map.extralayers = [mLayer];
       map.onTap = (e, pos){
         if(selectedNode == 1){
@@ -936,6 +936,12 @@ class _ManualEditorState extends State<ManualEditor> with WidgetsBindingObserver
   }
 
   void bottomBarElementFuncs(index, which) {
+
+    map.shouldLessInteract = true;
+    map.childSetState((){});
+    setState(() {
+      
+    });
     switch (index) {
       case 0:
         selectedNode = 0;
@@ -986,9 +992,21 @@ class _ManualEditorState extends State<ManualEditor> with WidgetsBindingObserver
         selectedPathNode = null;
         break;
       case 3:
-      selectedNode = 3;
-      selectedPageOrMediaNode = null;
-      selectedPathNode = null;
+        selectedNode = 3;
+        selectedPageOrMediaNode = null;
+        selectedPathNode = null;
+        break;
+      case 4:
+        selectedNode = 4;
+        selectedPageOrMediaNode = null;
+        selectedPathNode = null;
+        map.shouldLessInteract = false;
+        map.childSetState((){});
+        setState(() {
+          
+        });
+        break;
+      default:
         break;
     }
     setState(() {

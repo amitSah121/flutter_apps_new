@@ -1,10 +1,6 @@
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'dart:io';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:path_provider/path_provider.dart';
-
 Future<Directory> getUserDirectory({String dir = ""}) async {
   // Request storage permission
   final permissionStatus = await Permission.storage.status;

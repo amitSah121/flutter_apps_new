@@ -1,8 +1,10 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:map_test_1/constants/constants.dart';
+import 'package:map_test_1/geo_location_worker.dart';
 import 'package:map_test_1/helper_classes/helperClasses.dart';
 import 'package:map_test_1/helper_classes/model.dart';
 import 'package:map_test_1/helper_classes/point.dart';
@@ -27,20 +29,59 @@ class _TracerHomeState extends State<TracerHome> with WidgetsBindingObserver{
   var map = MapScreen();
   Journey? searchResult;
   bool openRightDrawer = false;
-  int selectedNode = 1;
+  int selectedNode = 3;
   Object? selectedPageOrMediaNode;
   int selectedDrawTool = 0;
   double x = 0, y=0;
   
   @override
-  void dispose() {
+  void initState(){
+    super.initState();
+    map.pathMarkerCustom = const Icon(Icons.circle,size: 4,);
+    Geolocator.getPositionStream().listen((Position pos){
+      
+      if(searchResult!.metadata.split(";")[1].split("=")[1] == "false"){
+        var q = searchResult!.pathNodes.last;
+        var p = sqrt(pow(pos.altitude-q.altitude,2)+pow(pos.latitude-q.latitude,2)+pow(pos.longitude-q.longitude,2));
+        // print(p);
+        if(p<distanceToRecord) return;
+        var time = DateTime.now();
+        int id = time.year*pow(10,16)+time.month*pow(10,14)+time.day*pow(10,12)+time.hour*pow(10,10)+time.minute*pow(10,8)+time.second*pow(10,6)+time.microsecond*pow(10,4) as int;
+        searchResult!.pathNodes.add(PathNode.fromPosition(pos,id));
+        map.donUseMyGeoLoc = true;
+        map.goMyLoc = false;
+        map.pathMarkerCustom = const Icon(Icons.circle,size: 4,);
+        try{
+          if(map.childSetState != null){
+            map.childSetState((){});
+          }
+        }catch (e){}
+      }
     
+    });
+  }
+
+
+  @override
+  void dispose() {
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
+
+    final myModel = Provider.of<CustomProvider>(context, listen: false);
+    if(myModel.currentJourney != null){
+      var p = myModel.currentJourney!.metadata.split(";");
+      p[1] = "autopathDone=true";
+      myModel.currentJourney?.metadata = p.join(";");
+      myModel.currentJourney = null;
+      setState(() {
+        
+      });
+    }
+
 
     Future.microtask(()async{
       final myModel = Provider.of<CustomProvider>(context, listen: false);
@@ -57,12 +98,10 @@ class _TracerHomeState extends State<TracerHome> with WidgetsBindingObserver{
       await writeFile(
           "$journeyPath/${myModel.currentJourney!.name}/metadata", myModel.currentJourney!.metadata);
       // myModel.currentJourney = null;
+      if(myModel.currentJourney!.metadata.split(";")[1].split("=")[1] == "true"){
+            myModel.currentJourney = null;
+      };
     });
-  }
-
-  @override
-  void initState() {
-    super.initState();
   }
 
   @override
@@ -76,7 +115,7 @@ class _TracerHomeState extends State<TracerHome> with WidgetsBindingObserver{
       map.pageNodes = searchResult!.pageNodes;
       map.mediaNodes = searchResult!.mediaNodes;
       map.goMyLoc = false;
-      map.shouldLessInteract = true;
+      // map.shouldLessInteract = true;
       map.onTap = (e, pos){
         if(selectedNode == 1){
           if(selectedDrawTool == 0){
@@ -633,6 +672,11 @@ class _TracerHomeState extends State<TracerHome> with WidgetsBindingObserver{
   }
 
   void bottomBarElementFuncs(index, which) {
+    map.shouldLessInteract = true;
+    map.childSetState((){});
+    setState(() {
+      
+    });
     switch (index) {
       case 0:
         if(which == 0){
@@ -641,7 +685,6 @@ class _TracerHomeState extends State<TracerHome> with WidgetsBindingObserver{
             var p = myModel.currentJourney!.metadata.split(";");
             p[1] = "autopathDone=true";
             myModel.currentJourney?.metadata = p.join(";");
-            myModel.currentJourney = null;
             setState(() {
               
             });
@@ -689,6 +732,15 @@ class _TracerHomeState extends State<TracerHome> with WidgetsBindingObserver{
         break;
       case 2:
         selectedNode = 2;
+        break;
+      case 3:
+        selectedNode = 4;
+        selectedPageOrMediaNode = null;
+        map.shouldLessInteract = false;
+        map.childSetState((){});
+        setState(() {
+          
+        });
         break;
     }
     setState(() {

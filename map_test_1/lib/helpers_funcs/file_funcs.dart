@@ -19,6 +19,32 @@ Future<File> getFile(String fileName) async {
     await file.create(recursive: true); 
   }
 
+  var temp = await File('$path/allFilesClient').readAsString();
+  var isAvail = false;
+  for(var t1 in temp.split('\n')){
+    // print({t1,fileName});
+    if(t1 == fileName){
+      isAvail = true;
+      break;
+    }
+  }
+  if(!isAvail){
+    File('$path/allFilesClient').writeAsString('$temp\n$fileName') ;
+  }
+
+  temp = await File('${await localPath}/updatedFilesInfo').readAsString();
+  isAvail = false;
+  for(var t1 in temp.split('\n')){
+    // print({t1,fileName});
+    if(t1 == fileName){
+      isAvail = true;
+      break;
+    }
+  }
+  if(!isAvail){
+    File('${await localPath}/updatedFilesInfo').writeAsString('$temp\n$fileName') ;
+  }
+
   return file;
 }
 
@@ -35,6 +61,18 @@ Future<void> deleteFile(String fileName) async {
   // else {
   //   print('File $fileName.csv does not exist.');
   // }
+
+  var temp = (await File('${await localPath}/allFilesClient').readAsString()).split("\n");
+  var isAvail = false;
+  for(var t1 in temp){
+    if(t1 == fileName){
+      temp.remove(t1);
+      break;
+    }
+  }
+  if(!isAvail){
+    File('${await localPath}/allFilesClient').writeAsString(temp.join("\n"));
+  }
 }
 
 Future<Directory> getDir(String dirName) async {
@@ -73,16 +111,39 @@ Future<void> deleteDirRecursive(String dirName) async {
     // Create a Directory object
     final dir = Directory(dirPath);
 
+    // print(dir);
+
     // Check if the directory exists
     if (await dir.exists()) {
       // Delete the directory and its contents recursively
+
+      var temp = (await File('${await localPath}/allFilesClient').readAsString()).split("\n");
+      var temp1 = await listFilesOnly(dir:dirName);
+      var tt = [];
+      // var isAvail = false;
+      for(var t1 in temp){
+        for(var t2 in temp1){
+          // print({t1,t2.substring(dirPath.length-dirName.length)});
+          if(t1 == t2.substring(dirPath.length-dirName.length)){
+            tt.add(t1);
+          }
+        }
+      }
+      for(var t1 in tt){
+        temp.remove(t1);
+      }
+      // if(!isAvail){
+      File('${await localPath}/allFilesClient').writeAsString(temp.join("\n"));
+      // }
+
+
       await dir.delete(recursive: true);
-      print('Directory $dirName deleted successfully.');
+      // print('Directory $dirName deleted successfully.');
     } else {
-      print('Directory $dirName does not exist.');
+      // print('Directory $dirName does not exist.');
     }
   } catch (e) {
-    print('Failed to delete directory $dirName: $e');
+    // print('Failed to delete directory $dirName: $e');
   }
 }
 
@@ -143,6 +204,15 @@ Future<List<String>> listFilesDirs({String pattern = "*",dir = ""}) async {
   return result;
 }
 
+Future<List<String>> listFilesOnly({dir=""}) async {
+  final files = (await getDir(dir))
+    .listSync(recursive: true)
+    .whereType<File>()
+    .map((file) => file.path)
+    .toList();
+  return files;
+} 
+
 Future<void> _listFilesAndDirs(  // note the pattern can only contain *,*/*,*/*/*,....
   Directory directory,
   String pattern,
@@ -156,7 +226,7 @@ Future<void> _listFilesAndDirs(  // note the pattern can only contain *,*/*,*/*/
     bool isDirectory = entity is Directory;
 
     result.add("$indent${entity.path}");
-    print("$indent${entity.path}");
+    // print("$indent${entity.path}");
     // print(pattern);
 
     // If the pattern requires recursive search, dive into subdirectories
@@ -175,6 +245,20 @@ Future<File> writeFile(String fileName, String data, {mode = FileMode.write}) as
   final file = await getFile(fileName);
 
   var p = await file.writeAsString(data, mode: mode);
+
+  var temp = await File('${await localPath}/updatedFilesInfo').readAsString();
+  var isAvail = false;
+  for(var t1 in temp.split('\n')){
+    // print({t1,fileName});
+    if(t1 == fileName){
+      isAvail = true;
+      break;
+    }
+  }
+  if(!isAvail){
+    File('${await localPath}/updatedFilesInfo').writeAsString('$temp\n$fileName') ;
+  }
+
   return p;
 }
 
@@ -185,7 +269,7 @@ Future<String> readFile(String fileName) async {
     final contents = await file.readAsString();
     return contents;
   } catch (e) {
-    print("Error reading: $e");
+    // print("Error reading: $e");
     return "";
   }
 }
@@ -217,6 +301,20 @@ Future<File> writeCsv<R extends CsvConvertible>(String fileName, List<R> data) a
   String csvData = const ListToCsvConverter().convert(rows);
 
   var p = await file.writeAsString(csvData);
+
+  var temp = await File('${await localPath}/updatedFilesInfo').readAsString();
+  var isAvail = false;
+  for(var t1 in temp.split('\n')){
+    // print({t1,fileName});
+    if(t1 == fileName){
+      isAvail = true;
+      break;
+    }
+  }
+  if(!isAvail){
+    File('${await localPath}/updatedFilesInfo').writeAsString('$temp\n$fileName') ;
+  }
+
   return p;
 }
 
@@ -236,7 +334,7 @@ Future<List<R>> readCsv<R extends CsvConvertible>(
     var result = rows.map((row) => fromCsvRow(row)).toList();
     return result;
   } catch (e) {
-    print("Error reading CSV: $e");
+    // print("Error reading CSV: $e");
     return [];
   }
 }
@@ -284,6 +382,19 @@ Future<File> writeJson<R extends JsonConvertible>(String fileName, List<R> data)
   final jsonData = data.map((item) => item.toJson()).toList();
   final jsonString = jsonEncode(jsonData);
 
+  var temp = await File('${await localPath}/updatedFilesInfo').readAsString();
+  var isAvail = false;
+  for(var t1 in temp.split('\n')){
+    // print({t1,fileName});
+    if(t1 == fileName){
+      isAvail = true;
+      break;
+    }
+  }
+  if(!isAvail){
+    File('${await localPath}/updatedFilesInfo').writeAsString('$temp\n$fileName') ;
+  }
+
   return await file.writeAsString(jsonString);
 }
 
@@ -300,7 +411,7 @@ Future<List<R>> readJson<R extends JsonConvertible>(
 
     return jsonData.map((item) => fromJson(item as Map<String, dynamic>)).toList();
   } catch (e) {
-    print("Error reading JSON: $e");
+    // print("Error reading JSON: $e");
     return [];
   }
 }
@@ -342,7 +453,7 @@ Future<List<R>> readYaml<R extends JsonConvertible>(
       throw Exception("Invalid YAML format. Expected a list.");
     }
   } catch (e) {
-    print("Error reading YAML: $e");
+    // print("Error reading YAML: $e");
     return [];
   }
 }

@@ -1,11 +1,18 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:map_test_1/constants/constants.dart';
+import 'package:map_test_1/geo_location_worker.dart';
 import 'package:map_test_1/helper_classes/helperClasses.dart';
 import 'package:map_test_1/helper_classes/model.dart';
+import 'package:map_test_1/helper_classes/point.dart';
+import 'package:map_test_1/helpers_funcs/apis.dart';
 import 'package:map_test_1/helpers_funcs/drawer_widget.dart';
 import 'package:map_test_1/helpers_funcs/file_funcs.dart';
+import 'package:map_test_1/helpers_funcs/location_finder.dart';
 import 'package:map_test_1/helpers_funcs/misselenious.dart';
 import 'package:map_test_1/mapscreen/mapscreen.dart';
 import 'package:map_test_1/provider/provider.dart';
@@ -24,10 +31,30 @@ class _HomeState extends State<Home> with WidgetsBindingObserver{
   var map = MapScreen();
   Journey? searchResult;
   bool openRightDrawer = false;
+  late GeoLocationWorker gW;
+  late var center;
+  late var p1;
 
   @override
   void initState() {
     super.initState();
+    Timer(const Duration(seconds: 5),(){
+      map.goMyLoc = false;
+      map.donUseMyGeoLoc = true;
+      Geolocator.getPositionStream().listen((pos){
+        map.current = pos;
+        try{
+          if(map.childSetState != null){
+            map.childSetState((){});
+          }
+        }catch (e){}
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   // @override
@@ -180,15 +207,13 @@ class _HomeState extends State<Home> with WidgetsBindingObserver{
             onPressed: () {
               Future.microtask(() async {
                 try {
-                  // print(await readFile(fileName))
-                  // final myModel =
-                  //     Provider.of<CustomProvider>(context, listen: false);
-                  // print(myModel.currentJourney!.metadata);
-                  // print(await readFile("journey/2024-12-20 17-03-43.276614/metadata"));
-                  // print(await readFile("journey/2024-12-20 17-03-43.276614/pathNode.json"));
-                  // print(await readFile("journey/2024-12-20 17-03-43.276614/pageNode.json"));
-                  // print(await readFile("journey/2024-12-20 17-03-43.276614/mediaNode.json"));
-                  await listFilesDirs(dir: journeyPath, pattern: "*");
+                  // FlutterForegroundTask.sendDataToTask({"Hello"});
+                  // await listFilesDirs(dir: journeyPath, pattern: "*");
+                  // print(await listFilesOnly(dir:"journey"));
+
+                  // await getAnyOtherFile("amit", "amitsah", "allFilesClient");
+                  // print("helli");
+                  // print(await readFile("allFilesClient"));
                 } catch (e) {
                   print(e);
                 }
@@ -232,33 +257,145 @@ class _HomeState extends State<Home> with WidgetsBindingObserver{
               ),
             IconButton(
               onPressed: () async {
-                var time = DateTime.now().toString().replaceAll(":", "-");
-                MediaNode mediaNode = MediaNode(
-                  pathNumber_1: -1, // means not connected to journey
-                  pathNumber_2: -1, // means not connected to journey
-                  t: 0,
-                  text: "write",
-                  medialLink: "customUrl/",
-                  mediaHeight: 300,
-                  mediaNumber: -1, // means not connected to journey
-                  metadata: "fileName=$time;title=untitled",
-                );
-                await Future.microtask(() async {
-                  await getFile("mediaNode/$time");
-                  await writeFile(
-                      "mediaNode/$time", jsonEncode(mediaNode.toJson()));
-                  final myModel =
-                      Provider.of<CustomProvider>(context, listen: false);
-                  myModel.mediaNodes.add(mediaNode);
-                  await Navigator.pushNamed(context, "/mediaEditor",
-                      arguments: {
-                        "node": mediaNode,
-                        "path": "mediaNode/$time"
-                      });
-                  setState(() {});
+                showDialog(
+                  context: context, 
+                  builder: (context){
+                    return SimpleDialog(
+                      title: const Text("Do you want to add media to your journey? Otherwise will be added to your extra media folder."),
+                      children: [
+                        SimpleDialogOption(
+                          onPressed: ()async {
+                            Navigator.pop(context);
+                            final myModel = Provider.of<CustomProvider>(context, listen: false);
+                            if(myModel.currentJourney == null || (myModel.currentJourney != null && myModel.currentJourney!.metadata.split(";")[1].split("=")[1] == "true") ) return;
+                            if(myModel.currentJourney!.pathNodes.length <= 1) return;
+                            var pos = await determinePositionWithoutCallingPermission();
+                            var time = DateTime.now();
+                            int id = time.year*pow(10,16)+time.month*pow(10,14)+time.day*pow(10,12)+time.hour*pow(10,10)+time.minute*pow(10,8)+time.second*pow(10,6)+time.microsecond*pow(10,4) as int;
+                            myModel.currentJourney!.pathNodes.add(PathNode.fromPosition(pos, id));
+                            var temp = getClosestPointOnPolyline(Point(pos.latitude,pos.longitude), myModel.currentJourney!.pathNodes);
+                            var p1 = temp[0] as Point;
+                            var a1 = temp[1] as PathNode;
+                            var b1 = temp[2] as PathNode;
+                            var ratio = findPointRatio(p1, Point(a1.latitude,a1.longitude), Point(b1.latitude,b1.longitude));
+                            // var time = DateTime.now();
+                            id = (time.year*pow(10,16)+time.month*pow(10,14)+time.day*pow(10,12)+time.hour*pow(10,10)+time.minute*pow(10,8)+time.second*pow(10,6)+time.microsecond*pow(10,4) +1 )as int;
+                            var newNode = MediaNode(pathNumber_1: a1.pathNumber, pathNumber_2: b1.pathNumber, t: ratio,mediaHeight: 300, medialLink: "customUrl/",mediaNumber: id,metadata: "fileName=journey;title=untitled");
+                            newNode.text = "Write";
+                            myModel.currentJourney!.mediaNodes.add(newNode);
+                            
+                            Navigator.pushNamed(context,"/mediaEditor",arguments: {"node":newNode,"path":""});
+                          },
+                          child: const Text("Okay"),
+                        ),
+                        SimpleDialogOption(
+                          onPressed: () async {
+                            Navigator.pop(context);
+                            var time = DateTime.now().toString().replaceAll(":", "-");
+                            MediaNode mediaNode = MediaNode(
+                              pathNumber_1: -1, // means not connected to journey
+                              pathNumber_2: -1, // means not connected to journey
+                              t: 0,
+                              text: "write",
+                              medialLink: "customUrl/",
+                              mediaHeight: 300,
+                              mediaNumber: -1, // means not connected to journey
+                              metadata: "fileName=$time;title=untitled",
+                            );
+                          
+                            await getFile("mediaNode/$time");
+                            await writeFile(
+                                "mediaNode/$time", jsonEncode(mediaNode.toJson()));
+                            final myModel =
+                                Provider.of<CustomProvider>(context, listen: false);
+                            myModel.mediaNodes.add(mediaNode);
+                            await Navigator.pushNamed(context, "/mediaEditor",
+                                arguments: {
+                                  "node": mediaNode,
+                                  "path": "mediaNode/$time"
+                                });
+                            setState(() {});
+                          },
+                          child: const Text("No"),
+                        ),
+                      ],
+                    );
                 });
+                
               },
               icon: const Icon(Icons.camera),
+              iconSize: 36,
+            ),
+            IconButton(
+              onPressed: () async {
+                showDialog(
+                  context: context, 
+                  builder: (context){
+                    return SimpleDialog(
+                      title: const Text("Do you want to add page to your journey? Otherwise will be added to your extra media folder."),
+                      children: [
+                        SimpleDialogOption(
+                          onPressed: ()async {
+                            Navigator.pop(context);
+                            final myModel = Provider.of<CustomProvider>(context, listen: false);
+                            if(myModel.currentJourney == null || (myModel.currentJourney != null && myModel.currentJourney!.metadata.split(";")[1].split("=")[1] == "true") ) return;
+                            if(myModel.currentJourney!.pathNodes.length <= 1) return;
+                            var pos = await determinePositionWithoutCallingPermission();
+                            var time = DateTime.now();
+                            int id = time.year*pow(10,16)+time.month*pow(10,14)+time.day*pow(10,12)+time.hour*pow(10,10)+time.minute*pow(10,8)+time.second*pow(10,6)+time.microsecond*pow(10,4) as int;
+                            myModel.currentJourney!.pathNodes.add(PathNode.fromPosition(pos, id));
+                            var temp = getClosestPointOnPolyline(Point(pos.latitude,pos.longitude), myModel.currentJourney!.pathNodes);
+                            var p1 = temp[0] as Point;
+                            var a1 = temp[1] as PathNode;
+                            var b1 = temp[2] as PathNode;
+                            var ratio = findPointRatio(p1, Point(a1.latitude,a1.longitude), Point(b1.latitude,b1.longitude));
+                            // var time = DateTime.now();
+                            id = (time.year*pow(10,16)+time.month*pow(10,14)+time.day*pow(10,12)+time.hour*pow(10,10)+time.minute*pow(10,8)+time.second*pow(10,6)+time.microsecond*pow(10,4) +1 )as int;
+                            var newNode = PageNode(pathNumber_1: a1.pathNumber, pathNumber_2: b1.pathNumber, t: ratio, rows: RowMap(rows: {}), pageNumber: id,metadata: "fileName=journey;title=untitled;backgroundColor=${Colors.white.value.toString()}");
+                            map.pageNodes!.add(newNode);
+                            myModel.currentJourney!.pageNodes.add(newNode);
+                            
+                            Navigator.pushNamed(context,"/pageEditor",arguments: {"node":newNode,"path":""});
+                          },
+                          child: const Text("Okay"),
+                        ),
+                        SimpleDialogOption(
+                          onPressed: () async {
+                            Navigator.pop(context);
+                            var time = DateTime.now().toString().replaceAll(":", "-");
+                            PageNode pageNode = PageNode(
+                              rows: RowMap(
+                                rows: {},
+                              ),
+                              pathNumber_1: -1, // means not connected to journey
+                              pathNumber_2: -1, // means not connected to journey
+                              t: 0,
+                              pageNumber: -1, // means not connected to journey
+                              metadata:
+                                  "fileName=$time;title=untitled;backgroundColor=${Colors.white.value.toString()}",
+                            );
+                          
+                            await getFile("pageNode/$time");
+                            await writeFile(
+                                "pageNode/$time", jsonEncode(pageNode.toJson()));
+                            final myModel =
+                                Provider.of<CustomProvider>(context, listen: false);
+                            myModel.pageNodes.add(pageNode);
+                            await Navigator.pushNamed(context, "/pageEditor",
+                                arguments: {
+                                  "node": pageNode,
+                                  "path": "pageNode/$time"
+                                });
+                            setState(() {});
+                          },
+                          child: const Text("No"),
+                        ),
+                      ],
+                    );
+                });
+                
+              },
+              icon: const Icon(Icons.book),
               iconSize: 36,
             )
           ],
@@ -270,7 +407,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver{
   BottomNavigationBar bottomBarDraw() {
     var keys = bottomNavBarHome.keys.toList();
     final myModel = Provider.of<CustomProvider>(context, listen: false);
-    final which2 = myModel.currentJourney == null ? 0 : 1;
+    final which2 = (myModel.currentJourney != null && myModel.currentJourney!.metadata.split(";")[1].split("=")[1] == "true" )   || myModel.currentJourney == null ? 0 : 1;
     return BottomNavigationBar(
       items: keys.map((ele) {
         return bottomNavBarHome[ele].runtimeType ==
@@ -342,7 +479,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver{
                       await getFile("$journeyPath/$time/mediaNode.json");
                       await writeFile(
                           "$journeyPath/$time/metadata", temp.metadata);
-                      // await Navigator.pushNamed(context, "/tracer");
+                      await Navigator.pushNamed(context, "/tracer");
                     });
                   }));
         });

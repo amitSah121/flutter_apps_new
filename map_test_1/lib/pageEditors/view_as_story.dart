@@ -1,9 +1,11 @@
 
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:map_test_1/constants/constants.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:map_test_1/helper_classes/model.dart';
+import 'package:map_test_1/helper_classes/point.dart';
+import 'package:map_test_1/mapscreen/mapscreen.dart';
 import 'package:map_test_1/pageEditors/media_reader.dart';
 import 'package:map_test_1/pageEditors/page_reader.dart';
 
@@ -15,6 +17,8 @@ class ViewAsStory extends StatefulWidget{
 }
 
 class _ViewAsStoryState extends State<ViewAsStory>{
+  MapScreen map = MapScreen();
+  var pos;
 
   @override
   Widget build(BuildContext context){
@@ -55,14 +59,104 @@ class _ViewAsStoryState extends State<ViewAsStory>{
         return t1;
       }
     }).toList();
+
+    map.pathNodes = journey.pathNodes;
+    map.pageNodes = journey.pageNodes;
+    map.mediaNodes = journey.mediaNodes;
+    var pageViewController = PageController();
+    if(map.extralayers.isEmpty){
+      var p1 = allNodesArranged[0];
+      var t1;
+      var ratio = p1.t;
+      for(var temp in journey.pathNodes){
+        if(t1 != null){
+          if(p1.pathNumber_1 == t1.pathNumber && p1.pathNumber_2 == temp.pathNumber){
+            pos = Point((temp.latitude - t1.latitude)*ratio+t1.latitude,(temp.longitude - t1.longitude)*ratio+t1.longitude);
+            break;
+          }else if(p1.pathNumber_2 == t1.pathNumber && p1.pathNumber_1 == temp.pathNumber){
+            pos = Point((t1.latitude - temp.latitude)*ratio+temp.latitude,(t1.longitude - temp.longitude)*ratio+temp.longitude);
+            break;
+          }
+        }
+        t1 = temp;
+      }
+      map.extralayers.clear();
+      map.extralayers.add(MarkerLayer(markers: [Marker(point:LatLng(pos.x,pos.y), child: const Icon(Icons.circle,size: 32,color: Colors.blue,)),]));
+    }
+    
+    pageViewController.addListener((){
+      if(pageViewController.page!.toInt() == pageViewController.page){
+        var p1 = allNodesArranged[pageViewController.page!.toInt()];
+        var t1;
+        var ratio = p1.t;
+        for(var temp in journey.pathNodes){
+          if(t1 != null){
+            if(p1.pathNumber_1 == t1.pathNumber && p1.pathNumber_2 == temp.pathNumber){
+              pos = Point((temp.latitude - t1.latitude)*ratio+t1.latitude,(temp.longitude - t1.longitude)*ratio+t1.longitude);
+              break;
+            }else if(p1.pathNumber_2 == t1.pathNumber && p1.pathNumber_1 == temp.pathNumber){
+              pos = Point((t1.latitude - temp.latitude)*ratio+temp.latitude,(t1.longitude - temp.longitude)*ratio+temp.longitude);
+              break;
+            }
+          }
+          t1 = temp;
+        }
+        map.extralayers.clear();
+        map.extralayers.add(MarkerLayer(markers: [Marker(point:LatLng(pos.x,pos.y), child: const Icon(Icons.circle,size: 32,color: Colors.blue,)),]));
+        map.childSetState((){});
+        // pos = map.getCamera().latLngToScreenPoint(LatLng(pos.x, pos.y));
+        setState(() {
+        });
+      }
+    });
+          // print(pos);
+
     return Scaffold(
       // appBar: appBarWidget(context),
       body: Stack(
         children: [
           PageView(
+            controller: pageViewController,
             scrollDirection: Axis.horizontal,
             children: allNodesAsView
           ),
+          DraggableScrollableSheet(
+            initialChildSize: 0.1, // Initial size (collapsed height)
+            minChildSize: 0.1, // Minimum height (when fully collapsed)
+            maxChildSize: 0.7, // Maximum height (when fully expanded)
+            builder: (context, scrollController) {
+              return Container(
+                width: MediaQuery.of(context).size.width,
+                height: 500,
+                decoration: BoxDecoration(color: Colors.blue[50]),
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  child: Column(
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text("Scroll Up"),
+                      ),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width,
+                        height: 500,
+                        child: Stack(
+                          children: [
+                            map,
+                            // if(pos != null)
+                            // Positioned(
+                            //   top: pos.y,
+                            //   left: pos.y,
+                            //   child: const Icon(Icons.circle,size: 100,))
+                          ]),
+                      ),
+                  
+                    ],
+                  ),
+                )
+              );
+            }),
+
           Positioned(
             bottom: 0,
             left: 0,
@@ -72,7 +166,7 @@ class _ViewAsStoryState extends State<ViewAsStory>{
               width: MediaQuery.of(context).size.width,
               child: const Center(child: Text("Viewing Story", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),)),
             ) 
-          )
+          ),
         ],
       ),
     );

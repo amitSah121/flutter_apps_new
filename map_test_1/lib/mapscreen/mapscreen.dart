@@ -34,6 +34,11 @@ class MapScreen extends StatefulWidget {
   final MapController mapController = MapController();
   bool donUseMyGeoLoc = false;
   bool dummy = false;
+  bool toShowPathMarker = true;
+  Icon? pathMarkerCustom;
+  Icon? pageMarkerCustom;
+  Icon? mediaMarkerCustom;
+  
   
 
   // MapCamera? camera;
@@ -122,7 +127,7 @@ class _MapScreenState extends State<MapScreen>{
           if(temp1.isNotEmpty){
             for(var pc in temp1){
               mediaMarker.add(pc);
-              mediaIcons.add(MediaNode.icon);
+              mediaIcons.add(widget.mediaMarkerCustom ?? MediaNode.icon);
             }
           }
 
@@ -130,12 +135,13 @@ class _MapScreenState extends State<MapScreen>{
           if(temp2.isNotEmpty){
             for(var tc in temp2){
               pageMarker.add(tc);
-              pageIcons.add(PageNode.icon);
+              pageIcons.add(widget.pageMarkerCustom ?? PageNode.icon);
             }
           }
           temp = p;
         }
-        pathIcons.add(PathNode.icon);
+        // print(widget.pathMarkerCustom);
+        pathIcons.add(widget.pathMarkerCustom ?? PathNode.icon);
         pathMarker.add(Position(longitude: p.longitude, latitude: p.latitude, timestamp: p.timestamp, accuracy: p.accuracy, altitude: p.altitude, altitudeAccuracy: p.altitudeAccuracy, heading: p.heading, headingAccuracy: p.headingAccuracy, speed: p.speed, speedAccuracy: p.speedAccuracy));
       }
       // var temp1 = fillMediaNodes(widget.pathNodes!.first, temp!);
@@ -167,6 +173,15 @@ class _MapScreenState extends State<MapScreen>{
         markerLayer(mediaMarker,widget: mediaIcons),
         markerLayer(markers,widget: markers.map((e)=> widget.locationIcon).toList()),
       ];
+
+    // var p = [
+    //     tileLayer(),
+    //     polylineLayer(polylines),
+    //     markerLayer(pathMarker,widget: pathIcons),
+    //     markerClusterLayer(pageMarker,widgets: pageIcons, c: Colors.green),
+    //     markerClusterLayer(mediaMarker,widgets: mediaIcons, c: Colors.blue),
+    //     markerLayer(markers,widget: markers.map((e)=> widget.locationIcon).toList()),
+    //   ];
     p.addAll(widget.extralayers.map((e)=>e));
     // widget.camera = widget.mapController.camera;
     return FlutterMap(

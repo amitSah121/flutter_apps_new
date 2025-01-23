@@ -92,19 +92,19 @@ class _MediaReaderState extends State<MediaReader>{
           padding: const EdgeInsets.only(top:8),
           child: isImage
             ? ( !b1 ?
-              Image.network(
-                link,
-                width: width,
-                height: height,
-                fit: BoxFit.cover,
-              )
-            : Image.file(
-                File("$defaultAppPath/$t2"),
-                width: width,
-                height: height,
-                fit: BoxFit.cover,
-              )
+            Image.network(
+              link,
+              width: width,
+              height: height,
+              fit: BoxFit.cover,
             )
+                        : Image.file(
+              File("$defaultAppPath/$t2"),
+              width: width,
+              height: height,
+              fit: BoxFit.cover,
+            )
+                        )
             :
             VideoDisplay(
               b1: b1,

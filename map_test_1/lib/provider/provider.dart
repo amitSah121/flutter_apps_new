@@ -10,34 +10,50 @@ class CustomProvider extends ChangeNotifier {
   List<PageNode> pageNodes = [];
   List<MediaNode> mediaNodes = [];
   Journey ? currentJourney;
+  String username = "";
+  String password = "";
+
 
   Future<void> loadJourney()async{
     journeys = [];
     var journeyDirs = await listFilesDirs(dir: journeyPath, pattern: "*");
     for(var q in journeyDirs){
-      var p = Journey(q.split("/").last);
-      await p.fillVariables();
-      journeys.add(p);
+      try{
+        var p = Journey(q.split("/").last);
+        await p.fillVariables();
+        journeys.add(p);
+      }catch (e){}
     }
   }
+
+    Future<void> set_auth(us, pa) async{
+      username = us;
+      password = pa;
+      notifyListeners();
+    }
+
 
   Future<void> loadOtherNodes()async{
     pageNodes = [];
     mediaNodes = [];
     var pn = await listFilesDirs(dir: "pageNode", pattern: "*");
     for(var q in pn){
-      var t = await readFile("pageNode/${q.split("/").last}");
-      // print(t);
-      var p = jsonDecode(t);
-      pageNodes.add(PageNode.fromJson(p));
+      try{
+        var t = await readFile("pageNode/${q.split("/").last}");
+        // print(t);
+        var p = jsonDecode(t);
+        pageNodes.add(PageNode.fromJson(p));
+      }catch (e){}
     }
 
     var mn = await listFilesDirs(dir: "mediaNode", pattern: "*");
     for(var q in mn){
-      var t = await readFile("mediaNode/${q.split("/").last}");
-      // print(t);
-      var p = jsonDecode(t);
-      mediaNodes.add(MediaNode.fromJson(p));
+      try{
+        var t = await readFile("mediaNode/${q.split("/").last}");
+        // print(t);
+        var p = jsonDecode(t);
+        mediaNodes.add(MediaNode.fromJson(p));
+      }catch (e){}
     }
   }
 

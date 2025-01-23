@@ -121,6 +121,12 @@ Future<String> compressImage() async {
       return "none";
     }
   }catch(e){
+    try{
+      var original = await image.readAsBytes();
+      await File(targetPath).writeAsBytes(original); // copy image to user dir
+      return targetPath;
+    }catch(e){
+    }
     return "none";
   }
 
